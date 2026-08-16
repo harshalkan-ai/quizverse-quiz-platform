@@ -1,0 +1,26 @@
+# Root-level gitignore
+
+# Dependencies
+node_modules/
+
+# Environment secrets - NEVER commit these
+.env
+.env.local
+.env.production
+.env.development
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
