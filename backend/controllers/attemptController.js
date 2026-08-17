@@ -23,7 +23,7 @@ async function startAttempt(req, res) {
         await db.query(`UPDATE attempts SET status = 'FAILED' WHERE quiz_id = $1 AND user_id = $2 AND status = 'IN_PROGRESS'`, [quiz_id, userId]);
 
         // Start new attempt
-        const durationMinutes = quiz.duration_minutes;
+        const durationMinutes = quiz.duration_minutes || 15;
         const insertAttempt = await db.query(`
             INSERT INTO attempts (quiz_id, user_id, status, started_at, expires_at)
             VALUES ($1, $2, 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '${durationMinutes} minutes')
@@ -75,9 +75,7 @@ async function submitAttempt(req, res) {
         }
 
         const quizRes = await db.query('SELECT * FROM quizzes WHERE id = $1', [attempt.quiz_id]);
-        const quiz = quizRes.rows[0];
-
-        const isLate = new Date() > new Date(attempt.expires_at);
+        const quiz = quizRes.rows[0] || {};
 
         // Calculate score
         let score = 0;
@@ -86,15 +84,16 @@ async function submitAttempt(req, res) {
         let incorrect_answers = 0;
         let unanswered = 0;
 
-        const qRes = await db.query('SELECT * FROM questions WHERE quiz_id = $1', [quiz.id]);
+        const qRes = await db.query('SELECT * FROM questions WHERE quiz_id = $1', [attempt.quiz_id]);
         const questions = qRes.rows;
 
         // prepare answers for DB insertion
         const answersToInsert = [];
 
         for (const q of questions) {
-            totalMarks += q.marks;
-            const userAns = answers.find(a => a.question_id === q.id);
+            const qMarks = Number(q.marks) || 5;
+            totalMarks += qMarks;
+            const userAns = answers.find(a => Number(a.question_id) === Number(q.id));
             
             if (!userAns || !userAns.selected_option_id) {
                 unanswered++;
@@ -103,26 +102,29 @@ async function submitAttempt(req, res) {
                 const optRes = await db.query('SELECT is_correct FROM options WHERE id = $1', [userAns.selected_option_id]);
                 if (optRes.rows.length > 0 && optRes.rows[0].is_correct) {
                     correct_answers++;
-                    score += q.marks;
+                    score += qMarks;
                     answersToInsert.push({ qId: q.id, optId: userAns.selected_option_id, is_correct: true });
                 } else {
                     incorrect_answers++;
-                    score -= Number(quiz.negative_marks || 0); // Apply negative marking
+                    const negMark = Number(quiz.negative_marks || 0);
+                    score -= negMark; // Apply negative marking
                     answersToInsert.push({ qId: q.id, optId: userAns.selected_option_id, is_correct: false });
                 }
             }
         }
 
         const negativeDeductions = incorrect_answers * Number(quiz.negative_marks || 0);
-        score = Math.max(0, score); // Clamp score at 0
-        const percentage = totalMarks > 0 ? (score / totalMarks) * 100 : 0;
-        const isPassed = percentage >= quiz.passing_score;
-        let finalStatus = isPassed ? 'PASSED' : 'FAILED';
-        if (isLate) finalStatus = 'TIMED_OUT'; // optionally mark TIMED_OUT instead if late
+        score = Math.max(0, Number(score.toFixed(2))); // Clamp score at 0
+        const percentage = totalMarks > 0 ? Number(((score / totalMarks) * 100).toFixed(2)) : 0;
+        const passingScore = Number(quiz.passing_score) || 70;
+        
+        // Exact TASK 1 rule: When percentage >= quiz.passing_score, set status = 'PASSED', else 'FAILED'
+        const finalStatus = percentage >= passingScore ? 'PASSED' : 'FAILED';
 
-        const timeTakenSeconds = Math.floor((new Date() - new Date(attempt.started_at)) / 1000);
+        const startTime = attempt.started_at ? new Date(attempt.started_at) : new Date();
+        const timeTakenSeconds = Math.max(0, Math.floor((new Date() - startTime) / 1000));
 
-        // Update Attempt
+        // Update Attempt in Database
         await db.query(`
             UPDATE attempts 
             SET score = $1, percentage = $2, correct_answers = $3, incorrect_answers = $4, 
@@ -139,15 +141,35 @@ async function submitAttempt(req, res) {
             `, [attempt_id, ans.qId, ans.optId, ans.is_correct]);
         }
 
+        const updatedAttempt = {
+            id: attempt_id,
+            quiz_id: attempt.quiz_id,
+            user_id: userId,
+            score,
+            percentage,
+            passing_score: passingScore,
+            correct_answers,
+            incorrect_answers,
+            unanswered,
+            negative_deductions: negativeDeductions,
+            time_taken_seconds: timeTakenSeconds,
+            status: finalStatus,
+            passed: finalStatus === 'PASSED',
+            completed_at: new Date()
+        };
+
         return res.status(200).json({
             status: 'SUCCESS',
             message: 'Attempt submitted successfully',
-            data: { attempt_id }
+            data: { 
+                attempt_id,
+                attempt: updatedAttempt
+            }
         });
 
     } catch (error) {
         console.error('SUBMIT ATTEMPT ERROR:', error);
-        return res.status(500).json({ status: 'ERROR', message: 'Server error' });
+        return res.status(500).json({ status: 'ERROR', message: 'Server error during attempt submission' });
     }
 }
 
@@ -166,6 +188,11 @@ async function getAttemptById(req, res) {
 
         if (attRes.rows.length === 0) return res.status(404).json({ status: 'FAIL', message: 'Attempt not found' });
         const attempt = attRes.rows[0];
+
+        // Ensure calculated passed flag and numbers
+        const passingScore = Number(attempt.passing_score) || 70;
+        const percentage = Number(attempt.percentage) || 0;
+        attempt.passed = attempt.status === 'PASSED' || percentage >= passingScore;
 
         // Fetch questions, options, explanations, and user answer
         const qRes = await db.query('SELECT * FROM questions WHERE quiz_id = $1', [attempt.quiz_id]);

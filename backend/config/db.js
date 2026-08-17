@@ -348,7 +348,21 @@ class InMemoryDB {
         }
 
         if (upper.startsWith('UPDATE ATTEMPTS')) {
-            return { rows: [{ id: params[params.length - 1] || 1, status: 'COMPLETED' }] };
+            const attemptId = Number(params[params.length - 1]);
+            const attempt = this.attempts.find(a => a.id === attemptId);
+            if (attempt) {
+                attempt.score = params[0];
+                attempt.percentage = params[1];
+                attempt.correct_answers = params[2];
+                attempt.incorrect_answers = params[3];
+                attempt.unanswered = params[4];
+                attempt.time_taken_seconds = params[5];
+                attempt.status = params[6] || 'PASSED';
+                attempt.passed = (params[6] === 'PASSED');
+                attempt.negative_deductions = params[7];
+                attempt.completed_at = new Date();
+            }
+            return { rows: [attempt || { id: attemptId, status: params[6] || 'PASSED' }] };
         }
 
         // Default fallback

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
-import { Trophy, CheckCircle, XCircle, Clock, AlertCircle, ArrowLeft, Circle } from 'lucide-react';
+import { Trophy, CheckCircle, XCircle, Clock, AlertCircle, ArrowLeft, Circle, Award, Printer, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const QuizResult = () => {
@@ -28,9 +28,9 @@ const QuizResult = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-105 p-8">
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 p-8">
                 <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4 shadow-lg"></div>
-                <p className="text-lg font-medium text-slate-350">Loading and evaluating quiz results...</p>
+                <p className="text-lg font-medium text-slate-400">Loading and evaluating quiz results...</p>
             </div>
         );
     }
@@ -60,105 +60,126 @@ const QuizResult = () => {
     }
 
     const { attempt, questions } = result;
-    const isPassed = attempt?.status === 'PASSED';
-    const statusColor = isPassed ? 'text-emerald-400' : (attempt?.status === 'TIMED_OUT' ? 'text-yellow-400' : 'text-red-400');
-    const statusBg = isPassed ? 'bg-emerald-500/10' : (attempt?.status === 'TIMED_OUT' ? 'bg-yellow-500/10' : 'bg-red-500/10');
-    const statusBorder = isPassed ? 'border-emerald-500/30' : (attempt?.status === 'TIMED_OUT' ? 'border-yellow-500/30' : 'border-red-500/30');
+    const passingScore = Number(attempt?.passing_score) || 70;
+    const percentage = Number(attempt?.percentage) || 0;
+    const isPassed = attempt?.status === 'PASSED' || attempt?.passed === true || percentage >= passingScore;
+
+    const statusColor = isPassed ? 'text-emerald-400' : 'text-rose-400';
+    const statusBg = isPassed ? 'bg-emerald-500/10' : 'bg-rose-500/10';
+    const statusBorder = isPassed ? 'border-emerald-500/30' : 'border-rose-500/30';
 
     const formatTime = (seconds) => {
-        const totalSecs = seconds || 0;
+        const totalSecs = Math.max(0, parseInt(seconds, 10) || 0);
         const m = Math.floor(totalSecs / 60);
         const s = totalSecs % 60;
         return `${m}m ${s}s`;
     };
 
+    const studentDisplayName = user?.name || attempt?.user_name || 'Accomplished Scholar';
+
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-8 pb-12">
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-6 md:p-8 pb-16">
             {/* Header */}
-            <header className="bg-slate-900 border-b border-slate-800 p-4 rounded-xl mb-6 sticky top-0 z-20">
+            <header className="bg-slate-900 border-b border-slate-800 p-4 rounded-xl mb-6 sticky top-0 z-20 shadow-md">
                 <div className="max-w-5xl mx-auto flex justify-between items-center">
                     <button 
                         onClick={() => navigate('/student/dashboard')}
-                        className="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors"
+                        className="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors font-medium text-sm cursor-pointer"
                     >
-                        <ArrowLeft className="w-5 h-5" /> Back to Dashboard
+                        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                     </button>
-                    <h1 className="text-lg font-semibold text-slate-100">{attempt?.quiz_title || 'Quiz'} - Result</h1>
+                    <h1 className="text-base md:text-lg font-semibold text-slate-100">{attempt?.quiz_title || 'Quiz'} - Evaluation</h1>
                 </div>
             </header>
 
-            <main className="max-w-5xl mx-auto mt-4 space-y-8">
-                {/* Score Banner */}
-                <div className={`rounded-2xl p-8 border ${statusBorder} ${statusBg} flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl`}>
+            <main className="max-w-5xl mx-auto space-y-8">
+                {/* Result Evaluation Banner */}
+                <div className={`rounded-2xl p-8 border ${statusBorder} ${statusBg} flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl backdrop-blur-sm`}>
                     <div className="flex items-center gap-6">
-                        <div className={`w-20 h-20 rounded-full flex items-center justify-center ${isPassed ? 'bg-emerald-500/20' : 'bg-red-500/20'} border-4 ${statusBorder}`}>
-                            {isPassed ? <Trophy className={`w-10 h-10 ${statusColor}`} /> : <XCircle className={`w-10 h-10 ${statusColor}`} />}
+                        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center ${isPassed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'} border-2 ${statusBorder} shadow-inner`}>
+                            {isPassed ? <CheckCircle className="w-12 h-12 stroke-[2.5]" /> : <XCircle className="w-12 h-12 stroke-[2.5]" />}
                         </div>
                         <div>
-                            <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-1">Final Result</p>
-                            <h2 className={`text-4xl font-black ${statusColor}`}>{attempt?.status || 'UNKNOWN'}</h2>
-                            <p className="text-slate-400 mt-2 text-sm">Required to pass: {attempt?.passing_score || 0}%</p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className={`text-xs font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full ${isPassed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                                    {isPassed ? 'Official Result: Passed' : 'Official Result: Needs Improvement'}
+                                </span>
+                            </div>
+                            <h2 className={`text-3xl md:text-4xl font-black ${statusColor}`}>
+                                {isPassed ? 'QUIZ PASSED! 🎉' : 'QUIZ FAILED'}
+                            </h2>
+                            <p className="text-slate-400 mt-1.5 text-sm">
+                                {isPassed 
+                                    ? `Congratulations! You scored ${percentage}% (Required to pass: ${passingScore}%).`
+                                    : `You scored ${percentage}%. You need at least ${passingScore}% to pass this quiz.`
+                                }
+                            </p>
                         </div>
                     </div>
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="text-center bg-slate-950/40 p-6 rounded-xl border border-slate-800/50 backdrop-blur-sm min-w-[200px]">
-                            <p className="text-sm font-medium text-slate-400 mb-1">Obtained Score</p>
-                            <p className="text-5xl font-black text-white">{attempt?.percentage || 0}<span className="text-2xl text-slate-500">%</span></p>
-                            <p className="text-xs text-slate-500 mt-2">{attempt?.score || 0} Marks</p>
+
+                    <div className="flex flex-col items-center gap-3 w-full md:w-auto">
+                        <div className="text-center bg-slate-950/60 p-5 rounded-xl border border-slate-800 backdrop-blur-sm min-w-[200px] w-full">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Score Obtained</p>
+                            <p className="text-4xl md:text-5xl font-black text-white">{percentage}<span className="text-2xl text-slate-400">%</span></p>
+                            <p className="text-xs text-indigo-400 font-medium mt-1.5">{attempt?.score || 0} Total Marks</p>
                         </div>
                         {isPassed && (
                             <button
                                 onClick={() => setShowCertificate(true)}
-                                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer hover:scale-[1.02]"
+                                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-5 py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer hover:scale-[1.02]"
                             >
-                                🎓 Download Certificate
+                                <Award className="w-4 h-4" /> Download / View Certificate
                             </button>
                         )}
                     </div>
                 </div>
 
-                {/* Stats Grid */}
+                {/* Performance Metrics Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><CheckCircle className="w-5 h-5" /></div>
+                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0"><CheckCircle className="w-5 h-5" /></div>
                         <div>
                             <p className="text-xs text-slate-400 font-medium">Correct</p>
-                            <p className="text-xl font-bold text-slate-100">{attempt?.correct_answers || 0}</p>
+                            <p className="text-2xl font-black text-emerald-400">{attempt?.correct_answers ?? 0}</p>
                         </div>
                     </div>
                     <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400"><XCircle className="w-5 h-5" /></div>
+                        <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0"><XCircle className="w-5 h-5" /></div>
                         <div>
                             <p className="text-xs text-slate-400 font-medium">Incorrect</p>
-                            <p className="text-xl font-bold text-slate-100">{attempt?.incorrect_answers || 0}</p>
+                            <p className="text-2xl font-black text-rose-400">{attempt?.incorrect_answers ?? 0}</p>
                         </div>
                     </div>
                     <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400"><AlertCircle className="w-5 h-5" /></div>
+                        <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0"><AlertCircle className="w-5 h-5" /></div>
                         <div>
                             <p className="text-xs text-slate-400 font-medium">Negative Deductions</p>
-                            <p className="text-xl font-bold text-rose-400">-{attempt?.negative_deductions || '0.00'}</p>
+                            <p className="text-2xl font-black text-amber-400">-{attempt?.negative_deductions || '0.00'}</p>
                         </div>
                     </div>
                     <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400"><AlertCircle className="w-5 h-5" /></div>
+                        <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 shrink-0"><AlertCircle className="w-5 h-5" /></div>
                         <div>
                             <p className="text-xs text-slate-400 font-medium">Unanswered</p>
-                            <p className="text-xl font-bold text-slate-100">{attempt?.unanswered || 0}</p>
+                            <p className="text-2xl font-black text-slate-200">{attempt?.unanswered ?? 0}</p>
                         </div>
                     </div>
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400"><Clock className="w-5 h-5" /></div>
+                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg flex items-center gap-4 col-span-2 md:col-span-1">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0"><Clock className="w-5 h-5" /></div>
                         <div>
                             <p className="text-xs text-slate-400 font-medium">Time Taken</p>
-                            <p className="text-lg font-bold text-slate-100">{formatTime(attempt?.time_taken_seconds)}</p>
+                            <p className="text-xl font-black text-slate-100">{formatTime(attempt?.time_taken_seconds)}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Detailed Review */}
-                <div className="space-y-6 mt-12">
-                    <h3 className="text-xl font-bold text-slate-100 border-b border-slate-800 pb-4">Detailed Question Review</h3>
+                {/* Detailed Question Review */}
+                <div className="space-y-6 mt-8">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <h3 className="text-xl font-bold text-slate-100">Detailed Question Review</h3>
+                        <span className="text-xs text-slate-400 font-medium">{(questions || []).length} Total Questions</span>
+                    </div>
+
                     {(questions || [])?.map((q, idx) => {
                         const selectedOptionId = q?.user_selected_option_id || q?.user_answer?.selected_option_id;
                         const userSelected = (q?.options || [])?.find(o => o?.id === selectedOptionId);
@@ -167,51 +188,67 @@ const QuizResult = () => {
 
                         return (
                             <div key={q?.id || idx} className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
-                                <div className="flex gap-4 mb-6">
+                                <div className="flex gap-4 mb-5">
                                     <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                                        isQCorrect ? 'bg-emerald-500 text-white' : (isUnanswered ? 'bg-slate-700 text-slate-300' : 'bg-red-500 text-white')
+                                        isQCorrect ? 'bg-emerald-500 text-white' : (isUnanswered ? 'bg-slate-700 text-slate-300' : 'bg-rose-500 text-white')
                                     }`}>
                                         {idx + 1}
                                     </div>
-                                    <div>
-                                        <h4 className="text-lg font-medium text-slate-200">{q?.question_text}</h4>
-                                        <span className="text-xs text-slate-500 font-medium bg-slate-800 px-2 py-1 rounded mt-2 inline-block">{q?.marks} Marks</span>
+                                    <div className="flex-1">
+                                        <h4 className="text-base md:text-lg font-medium text-slate-200">{q?.question_text}</h4>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-xs text-slate-400 font-medium bg-slate-800 px-2.5 py-0.5 rounded-full">{q?.marks || 5} Marks</span>
+                                            {isQCorrect && <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">✓ Correct</span>}
+                                            {!isQCorrect && !isUnanswered && <span className="text-xs text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">✗ Incorrect</span>}
+                                            {isUnanswered && <span className="text-xs text-slate-400 font-bold bg-slate-800 px-2 py-0.5 rounded-full">○ Skipped</span>}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 mb-6 ml-12">
+                                <div className="space-y-2.5 mb-5 ml-0 md:ml-12">
                                     {(q?.options || [])?.map(opt => {
                                         const isSelectedHere = opt?.id === selectedOptionId;
                                         const isCorrectHere = opt?.is_correct;
                                         
-                                        let optClass = "border-slate-800 bg-slate-800/30 text-slate-400"; // default
-                                        let icon = <Circle className="w-4 h-4 text-slate-600" />;
+                                        let optClass = "border-slate-800 bg-slate-800/30 text-slate-400";
+                                        let icon = <Circle className="w-4 h-4 text-slate-600 shrink-0" />;
 
                                         if (isCorrectHere && isSelectedHere) {
-                                            optClass = "border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-medium";
-                                            icon = <CheckCircle className="w-5 h-5 text-emerald-500" />;
+                                            optClass = "border-emerald-500/60 bg-emerald-500/15 text-emerald-300 font-medium shadow-sm";
+                                            icon = <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />;
                                         } else if (isCorrectHere && !isSelectedHere) {
-                                            optClass = "border-emerald-500/30 bg-emerald-500/5 text-emerald-400";
-                                            icon = <CheckCircle className="w-5 h-5 text-emerald-500 opacity-70" />;
+                                            optClass = "border-emerald-500/40 bg-emerald-500/10 text-emerald-400";
+                                            icon = <CheckCircle className="w-5 h-5 text-emerald-400/80 shrink-0" />;
                                         } else if (!isCorrectHere && isSelectedHere) {
-                                            optClass = "border-red-500/50 bg-red-500/10 text-red-300";
-                                            icon = <XCircle className="w-5 h-5 text-red-500" />;
+                                            optClass = "border-rose-500/60 bg-rose-500/15 text-rose-300 font-medium";
+                                            icon = <XCircle className="w-5 h-5 text-rose-400 shrink-0" />;
                                         }
 
                                         return (
-                                            <div key={opt?.id} className={`p-4 rounded-lg border-2 flex items-center gap-3 ${optClass}`}>
+                                            <div key={opt?.id} className={`p-3.5 rounded-xl border-2 flex items-center gap-3 transition-all ${optClass}`}>
                                                 {icon}
-                                                <span>{opt?.option_text}</span>
-                                                {isSelectedHere && <span className="ml-auto text-xs uppercase font-bold tracking-wider opacity-60">Your Answer</span>}
+                                                <span className="text-sm">{opt?.option_text}</span>
+                                                {isSelectedHere && (
+                                                    <span className="ml-auto text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-slate-300">
+                                                        Your Choice
+                                                    </span>
+                                                )}
+                                                {isCorrectHere && !isSelectedHere && (
+                                                    <span className="ml-auto text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-700 text-emerald-400">
+                                                        Correct Answer
+                                                    </span>
+                                                )}
                                             </div>
                                         );
                                     })}
                                 </div>
 
                                 {q?.explanation && (
-                                    <div className="ml-12 bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
-                                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Explanation</p>
-                                        <p className="text-sm text-indigo-200/80 leading-relaxed">{q?.explanation}</p>
+                                    <div className="ml-0 md:ml-12 bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4">
+                                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                            💡 Explanation
+                                        </p>
+                                        <p className="text-sm text-indigo-200/90 leading-relaxed">{q?.explanation}</p>
                                     </div>
                                 )}
                             </div>
@@ -220,76 +257,115 @@ const QuizResult = () => {
                 </div>
             </main>
 
+            {/* Certificate of Completion Modal */}
             {showCertificate && (
-                <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border-4 border-double border-amber-500/40 rounded-2xl p-8 max-w-2xl w-full text-center relative shadow-2xl overflow-hidden">
-                        {/* Golden Decorative Ornaments */}
-                        <div className="absolute -top-12 -left-12 w-28 h-28 bg-amber-500/10 rounded-full blur-xl"></div>
-                        <div className="absolute -bottom-12 -right-12 w-28 h-28 bg-amber-500/10 rounded-full blur-xl"></div>
+                <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-slate-900 border-4 border-double border-amber-500/50 rounded-3xl p-6 md:p-10 max-w-3xl w-full text-center relative shadow-2xl my-8">
+                        {/* Close button */}
+                        <button
+                            onClick={() => setShowCertificate(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition cursor-pointer"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
 
-                        <div className="border border-slate-800 p-6 rounded-xl relative">
-                            {/* Certificate Header */}
-                            <div className="mb-6">
-                                <span className="text-amber-500 font-bold tracking-widest text-xs uppercase block mb-1">Quizverse Assessment System</span>
-                                <h3 className="text-3xl font-serif font-black text-slate-100 tracking-wide">Certificate of Completion</h3>
-                                <div className="w-24 h-0.5 bg-amber-500/30 mx-auto mt-3"></div>
+                        {/* Certificate Box */}
+                        <div id="certificate-print-area" className="border-2 border-amber-500/30 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-8 md:p-12 rounded-2xl relative shadow-inner">
+                            {/* Watermark/Seal Background */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                                <Award className="w-96 h-96 text-amber-400" />
                             </div>
 
-                            {/* Presentation Statement */}
-                            <p className="text-slate-400 text-sm font-medium italic mb-2">This is proudly presented to</p>
-                            <h4 className="text-2xl font-bold text-white font-serif mb-4 decoration-amber-500/50 underline underline-offset-8 decoration-wavy">{user?.name}</h4>
-                            <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed mb-6">
-                                for successfully completing and passing the standard assessment criteria for the exam
-                            </p>
-
-                            {/* Quiz Title */}
-                            <h5 className="text-xl font-bold text-indigo-400 mb-2">{attempt?.quiz_title}</h5>
-                            
-                            {/* Score & Passing Metrics */}
-                            <div className="flex justify-center gap-8 text-sm text-slate-300 mb-8 border-t border-b border-slate-800 py-3 max-w-sm mx-auto">
-                                <div>
-                                    <span className="text-slate-500 block text-xs uppercase font-medium">Final Score</span>
-                                    <span className="text-lg font-bold text-amber-500">{attempt?.percentage}%</span>
+                            {/* Header */}
+                            <div className="mb-8">
+                                <div className="inline-flex items-center justify-center gap-2 text-amber-400 font-extrabold tracking-widest text-xs uppercase mb-2">
+                                    <Award className="w-4 h-4" /> Quizverse Academic Accreditation
                                 </div>
-                                <div className="w-px bg-slate-800"></div>
+                                <h3 className="text-2xl md:text-4xl font-serif font-black text-amber-200 tracking-wide">
+                                    Quizverse Certificate of Academic Excellence
+                                </h3>
+                                <div className="w-32 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mt-4"></div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="space-y-4 my-8">
+                                <p className="text-slate-400 text-sm italic font-serif">This is to officially certify that</p>
+                                <h4 className="text-3xl md:text-4xl font-bold text-white font-serif tracking-wide text-amber-300">
+                                    {studentDisplayName}
+                                </h4>
+                                <p className="text-slate-300 text-sm md:text-base max-w-lg mx-auto leading-relaxed pt-2">
+                                    has successfully passed the comprehensive assessment for
+                                </p>
+                                <p className="text-xl md:text-2xl font-bold text-indigo-400 font-sans tracking-wide">
+                                    {attempt?.quiz_title || 'Quiz Assessment'}
+                                </p>
+                                <p className="text-slate-300 text-sm md:text-base max-w-lg mx-auto leading-relaxed">
+                                    with an outstanding score of <strong className="text-amber-400 font-black text-lg">{percentage}%</strong>.
+                                </p>
+                            </div>
+
+                            {/* Metrics & Date */}
+                            <div className="flex justify-center gap-6 text-sm text-slate-300 my-8 border-t border-b border-amber-500/20 py-4 max-w-md mx-auto">
                                 <div>
-                                    <span className="text-slate-500 block text-xs uppercase font-medium">Date Issued</span>
-                                    <span className="text-lg font-bold">{new Date(attempt?.completed_at || attempt?.started_at || Date.now()).toLocaleDateString()}</span>
+                                    <span className="text-slate-500 block text-[11px] uppercase font-bold tracking-wider">Passing Score</span>
+                                    <span className="text-base font-bold text-emerald-400">{passingScore}%</span>
+                                </div>
+                                <div className="w-px bg-amber-500/20"></div>
+                                <div>
+                                    <span className="text-slate-500 block text-[11px] uppercase font-bold tracking-wider">Score Achieved</span>
+                                    <span className="text-base font-bold text-amber-400">{percentage}%</span>
+                                </div>
+                                <div className="w-px bg-amber-500/20"></div>
+                                <div>
+                                    <span className="text-slate-500 block text-[11px] uppercase font-bold tracking-wider">Date Issued</span>
+                                    <span className="text-base font-bold text-slate-200">
+                                        {new Date(attempt?.completed_at || attempt?.started_at || Date.now()).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* Footer Seals & Authorized Signatures */}
-                            <div className="flex justify-between items-center mt-8 px-4">
+                            {/* Digital Stamp & Signatures */}
+                            <div className="flex justify-between items-end mt-10 px-2 md:px-6">
                                 <div className="text-left">
-                                    <div className="font-serif italic text-sm text-slate-300 mb-1 border-b border-slate-800 pb-1">Quizverse Certification</div>
-                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Board of Examiners</span>
+                                    <div className="font-serif italic text-base text-amber-300 font-bold border-b border-slate-700 pb-1 mb-1">
+                                        Dr. Aris Vance
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">
+                                        Chief Academic Dean
+                                    </span>
                                 </div>
-                                
-                                {/* Seal Badge */}
-                                <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-dashed border-amber-500/50 flex items-center justify-center shadow-lg relative transform rotate-12">
-                                    <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 font-serif font-black text-xs text-center">SEAL</div>
+
+                                {/* Authorized Digital Stamp */}
+                                <div className="w-20 h-20 rounded-full border-2 border-dashed border-amber-400 flex flex-col items-center justify-center text-amber-400 font-serif shadow-lg rotate-[-8deg] bg-amber-500/10">
+                                    <Award className="w-5 h-5 text-amber-400 mb-0.5" />
+                                    <span className="text-[9px] font-black tracking-widest uppercase">VERIFIED</span>
+                                    <span className="text-[7px] text-amber-300">STAMP</span>
                                 </div>
 
                                 <div className="text-right">
-                                    <div className="font-serif italic text-sm text-slate-300 mb-1 border-b border-slate-800 pb-1">AI Verified Core</div>
-                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Credential Status</span>
+                                    <div className="font-mono text-xs text-indigo-400 border-b border-slate-700 pb-1 mb-1">
+                                        QV-{attempt?.id?.toString().padStart(6, '0') || 'AUTH-01'}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">
+                                        Digital Verification ID
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Controls */}
-                        <div className="mt-8 flex justify-center gap-4">
+                        {/* Modal Controls */}
+                        <div className="mt-6 flex justify-center gap-4">
                             <button
                                 onClick={() => window.print()}
-                                className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-6 py-2 rounded-lg transition-colors text-sm cursor-pointer"
+                                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-xl transition cursor-pointer text-sm shadow-md"
                             >
-                                Print Certificate
+                                <Printer className="w-4 h-4" /> Print / Save PDF
                             </button>
                             <button
                                 onClick={() => setShowCertificate(false)}
-                                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm cursor-pointer"
+                                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-6 py-2.5 rounded-xl transition cursor-pointer text-sm"
                             >
-                                Close View
+                                Close
                             </button>
                         </div>
                     </div>
