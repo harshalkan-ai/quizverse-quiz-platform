@@ -1,0 +1,11 @@
+{
+  "name": "quizverse",
+  "version": "1.0.0",
+  "description": "Quizverse Fullstack Quiz Platform",
+  "scripts": {
+    "dev:backend": "node backend/server.js",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "node backend/server.js"
+  }
+}

@@ -117,7 +117,12 @@ async function seedAdmin() {
     }
 }
 
-app.listen(5000, async () => {
-    console.log('Server running on http://localhost:5000');
-    await initDatabase();
-});
+if (require.main === module) {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, async () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+        await initDatabase();
+    });
+}
+
+module.exports = app;

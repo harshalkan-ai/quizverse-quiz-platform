@@ -1,22 +1,18 @@
 import axios from 'axios';
 
-// Create a pre-configured Axios instance pointing to our Node.js backend
+// Create a pre-configured Axios instance pointing to our backend API
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api', // Backend REST API base URL
+    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
 });
 
-// Axios Request Interceptor: Executed before every single HTTP request
+// Axios Request Interceptor: Attach JWT token automatically
 axiosInstance.interceptors.request.use(
     (config) => {
-        // Retrieve stored JWT token from browser localStorage
         const token = localStorage.getItem('token');
-
-        // If token exists, automatically attach it to Authorization header
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-
-        return config; // Continue request with attached header
+        return config;
     },
     (error) => {
         console.error('Axios Request Error:', error);
@@ -24,7 +20,7 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Axios Response Interceptor: Executed on every HTTP response
+// Axios Response Interceptor: Handle response
 axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
