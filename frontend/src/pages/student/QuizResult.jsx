@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
 import { Trophy, CheckCircle, XCircle, Clock, AlertCircle, ArrowLeft, Circle, Award, Printer, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 const QuizResult = () => {
     const { attemptId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,7 +17,11 @@ const QuizResult = () => {
         const fetchResult = async () => {
             try {
                 const res = await axiosInstance.get(`/attempts/${attemptId}`);
-                setResult(res.data?.data);
+                const data = res.data?.data;
+                setResult(data);
+                if (data?.attempt?.status === 'PASSED' && location.state?.openCertificate) {
+                    setShowCertificate(true);
+                }
             } catch (err) {
                 console.error("Error fetching result", err);
             } finally {
@@ -24,7 +29,7 @@ const QuizResult = () => {
             }
         };
         fetchResult();
-    }, [attemptId, navigate]);
+    }, [attemptId, navigate, location.state]);
 
     if (loading) {
         return (

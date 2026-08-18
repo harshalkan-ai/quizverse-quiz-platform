@@ -56,9 +56,10 @@ const StudentDashboard = () => {
     }
 
     const attemptsList = Array.isArray(history) ? history : [];
-    const totalAttemptsCount = attemptsList.length;
-    const totalPassedCount = attemptsList.filter(a => a?.status === 'PASSED' || a?.passed === true).length;
-    const validHistory = attemptsList.filter(a => a?.percentage !== undefined && a?.percentage !== null && a?.status !== 'IN_PROGRESS');
+    const completedAttempts = attemptsList.filter(a => a?.status !== 'IN_PROGRESS');
+    const totalAttemptsCount = completedAttempts.length;
+    const totalPassedCount = completedAttempts.filter(a => a?.status === 'PASSED' || a?.passed === true).length;
+    const validHistory = completedAttempts.filter(a => a?.percentage !== undefined && a?.percentage !== null);
     const avgScoreDisplay = validHistory.length > 0 
         ? (validHistory.reduce((acc, curr) => acc + parseFloat(curr?.percentage || 0), 0) / validHistory.length).toFixed(1) 
         : "0";
@@ -154,7 +155,7 @@ const StudentDashboard = () => {
                             (quizzes || []).map(quiz => {
                                 const quizAttempts = attemptsList.filter(a => Number(a?.quiz_id) === Number(quiz?.id) && a?.status !== 'IN_PROGRESS');
                                 const attemptsCount = quizAttempts.length;
-                                const isMaxReached = attemptsCount >= (quiz?.max_attempts || 1);
+                                const isMaxReached = attemptsCount > 0;
                                 const lastAttempt = quizAttempts[0];
                                 const lastAttemptId = lastAttempt?.id;
 

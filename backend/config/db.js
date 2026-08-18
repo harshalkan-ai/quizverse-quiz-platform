@@ -165,47 +165,8 @@ class InMemoryDB {
                 ]
             }
         ];
-        this.attempts = [
-            {
-                id: 1,
-                user_id: 2,
-                user_name: 'Alex Developer',
-                quiz_id: 1,
-                quiz_title: 'JavaScript Deep Dive',
-                score: 95,
-                percentage: 95.0,
-                passed: true,
-                status: 'COMPLETED',
-                submitted_at: new Date(Date.now() - 3600000),
-                created_at: new Date(Date.now() - 3600000)
-            },
-            {
-                id: 2,
-                user_id: 2,
-                user_name: 'Sara Coder',
-                quiz_id: 2,
-                quiz_title: 'Python Core & OOP',
-                score: 90,
-                percentage: 90.0,
-                passed: true,
-                status: 'COMPLETED',
-                submitted_at: new Date(Date.now() - 7200000),
-                created_at: new Date(Date.now() - 7200000)
-            },
-            {
-                id: 3,
-                user_id: 2,
-                user_name: 'Rohan Sharma',
-                quiz_id: 3,
-                quiz_title: 'PostgreSQL & Database Architecture',
-                score: 85,
-                percentage: 85.0,
-                passed: true,
-                status: 'COMPLETED',
-                submitted_at: new Date(Date.now() - 10800000),
-                created_at: new Date(Date.now() - 10800000)
-            }
-        ];
+        this.attempts = [];
+        this.answers = [];
         this.nextId = 100;
     }
 
@@ -278,14 +239,22 @@ class InMemoryDB {
         if (upper.includes('FROM QUIZZES')) {
             if (upper.includes('WHERE ID = $1') || upper.includes('WHERE Q.ID = $1')) {
                 const quiz = this.quizzes.find(q => q.id === Number(params[0]));
+                // If query includes status filter (AND status = $2), check it
+                if (quiz && params[1] && upper.includes('STATUS')) {
+                    if (quiz.status !== params[1]) return { rows: [] };
+                }
                 return { rows: quiz ? [{ ...quiz, total_questions: this.questions.filter(qu => qu.quiz_id === quiz.id).length }] : [] };
             }
-            const list = this.quizzes.map(q => ({
+            // List all quizzes (optionally filter PUBLISHED only)
+            let list = this.quizzes;
+            if (upper.includes('PUBLISHED') || upper.includes('STATUS')) {
+                list = list.filter(q => q.status === 'PUBLISHED');
+            }
+            return { rows: list.map(q => ({
                 ...q,
                 category_name: this.categories.find(c => c.id === q.category_id)?.name || 'General',
                 total_questions: this.questions.filter(qu => qu.quiz_id === q.id).length || 5
-            }));
-            return { rows: list };
+            })) };
         }
 
         if (upper.startsWith('INSERT INTO QUIZZES')) {
@@ -344,43 +313,105 @@ class InMemoryDB {
             return { rows: [newQuestion] };
         }
 
+        // OPTIONS queries (used by submitAttempt to check correct answer)
+        if (upper.includes('FROM OPTIONS')) {
+            if (upper.includes('WHERE QUESTION_ID = $1')) {
+                const qId = Number(params[0]);
+                const question = this.questions.find(q => q.id === qId);
+                let opts = question?.options || [];
+                // Filter by is_correct if query includes IS_CORRECT
+                if (upper.includes('IS_CORRECT')) {
+                    opts = opts.filter(o => o.is_correct === true);
+                }
+                return { rows: opts };
+            }
+            if (upper.includes('WHERE ID = $1')) {
+                const optId = Number(params[0]);
+                for (const q of this.questions) {
+                    const opt = (q.options || []).find(o => o.id === optId);
+                    if (opt) return { rows: [opt] };
+                }
+                return { rows: [] };
+            }
+            return { rows: [] };
+        }
+
         if (upper.startsWith('INSERT INTO OPTIONS')) {
             return { rows: [{ id: this.nextId++ }] };
         }
 
         // ATTEMPTS queries & LEADERBOARD
         if (upper.includes('FROM ATTEMPTS')) {
+            // COUNT(*) with user_id + quiz_id + status filters
             if (upper.includes('COUNT(*)')) {
-                return { rows: [{ count: this.attempts.length }] };
+                let filtered = [...this.attempts];
+                if (upper.includes('QUIZ_ID') && params[0] !== undefined) {
+                    filtered = filtered.filter(a => String(a.quiz_id) === String(params[0]));
+                }
+                if (upper.includes('USER_ID') && params[1] !== undefined) {
+                    filtered = filtered.filter(a => String(a.user_id) === String(params[1]));
+                }
+                if (upper.includes('STATUS') && params[2] !== undefined) {
+                    filtered = filtered.filter(a => a.status !== params[2]);
+                }
+                return { rows: [{ count: filtered.length }] };
             }
-            if (upper.includes('WHERE A.ID = $1') || upper.includes('WHERE ID = $1')) {
+            // Single attempt by ID (getAttemptById)
+            if (upper.includes('WHERE A.ID = $1') || (upper.includes('WHERE ID = $1') && !upper.includes('QUIZ_ID'))) {
                 const attId = Number(params[0]);
-                const att = this.attempts.find(a => a.id === attId) || this.attempts[0];
-                const quiz = this.quizzes.find(q => q.id === (att?.quiz_id || 1)) || this.quizzes[0];
+                const att = this.attempts.find(a => a.id === attId);
+                if (!att) return { rows: [] };
+                const quiz = this.quizzes.find(q => q.id === att.quiz_id) || this.quizzes[0];
                 return { rows: [{ ...att, quiz_title: quiz?.title || 'Assessment', passing_score: quiz?.passing_score || 70, negative_marks: quiz?.negative_marks || 0 }] };
             }
-            if (upper.includes('WHERE A.QUIZ_ID = $1') || upper.includes('WHERE QUIZ_ID = $1')) {
-                return { rows: this.attempts };
+            // Attempts filtered by user_id (getUserAttempts / history)
+            if (upper.includes('WHERE A.USER_ID = $1') || (upper.includes('USER_ID') && !upper.includes('QUIZ_ID') && !upper.includes('COUNT'))) {
+                const uid = Number(params[0]) || params[0];
+                const userAttempts = this.attempts
+                    .filter(a => String(a.user_id) === String(uid))
+                    .map(a => {
+                        const quiz = this.quizzes.find(q => q.id === a.quiz_id);
+                        return { ...a, quiz_title: quiz?.title || 'Assessment' };
+                    });
+                return { rows: userAttempts };
             }
-            return { rows: this.attempts };
+            // All attempts (leaderboard)
+            return { rows: this.attempts.map(a => {
+                const quiz = this.quizzes.find(q => q.id === a.quiz_id);
+                return { ...a, quiz_title: quiz?.title || 'Assessment' };
+            }) };
         }
 
         if (upper.startsWith('INSERT INTO ATTEMPTS')) {
+            const now = new Date();
             const newAttempt = {
                 id: this.nextId++,
-                user_id: params[0] || 2,
-                quiz_id: params[1] || 1,
+                quiz_id: params[0],
+                user_id: params[1],
                 score: 0,
                 percentage: 0,
                 passed: false,
                 status: 'IN_PROGRESS',
-                created_at: new Date()
+                started_at: now,
+                expires_at: new Date(now.getTime() + 20 * 60000),
+                created_at: now
             };
             this.attempts.push(newAttempt);
             return { rows: [newAttempt] };
         }
 
         if (upper.startsWith('UPDATE ATTEMPTS')) {
+            // Check if this is a status-only update (cancel IN_PROGRESS)
+            if (upper.includes("STATUS = 'FAILED'") && upper.includes('IN_PROGRESS')) {
+                const quizId = params[0], userId = params[1];
+                this.attempts.forEach(a => {
+                    if (String(a.quiz_id) === String(quizId) && String(a.user_id) === String(userId) && a.status === 'IN_PROGRESS') {
+                        a.status = 'FAILED';
+                    }
+                });
+                return { rows: [] };
+            }
+            // Full score update
             const attemptId = Number(params[params.length - 1]);
             const attempt = this.attempts.find(a => a.id === attemptId);
             if (attempt) {
@@ -396,6 +427,19 @@ class InMemoryDB {
                 attempt.completed_at = new Date();
             }
             return { rows: [attempt || { id: attemptId, status: params[6] || 'PASSED' }] };
+        }
+
+        // ANSWERS queries
+        if (upper.startsWith('INSERT INTO ANSWERS')) {
+            this.answers.push({ attempt_id: params[0], question_id: params[1], selected_option_id: params[2], is_correct: params[3] });
+            return { rows: [] };
+        }
+        if (upper.includes('FROM ANSWERS')) {
+            if (upper.includes('ATTEMPT_ID') && upper.includes('QUESTION_ID')) {
+                const ans = this.answers.find(a => String(a.attempt_id) === String(params[0]) && String(a.question_id) === String(params[1]));
+                return { rows: ans ? [ans] : [] };
+            }
+            return { rows: this.answers.filter(a => String(a.attempt_id) === String(params[0])) };
         }
 
         // Default fallback

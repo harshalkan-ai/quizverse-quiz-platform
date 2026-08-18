@@ -13,10 +13,10 @@ async function startAttempt(req, res) {
         if (quizRes.rows.length === 0) return res.status(404).json({ status: 'FAIL', message: 'Quiz not found or not published' });
         const quiz = quizRes.rows[0];
 
-        // Check Max Attempts
+        // Check past completed attempts (single attempt restriction)
         const pastAttempts = await db.query('SELECT count(*) FROM attempts WHERE quiz_id = $1 AND user_id = $2 AND status != $3', [quiz_id, userId, 'IN_PROGRESS']);
-        if (parseInt(pastAttempts.rows[0].count) >= quiz.max_attempts) {
-            return res.status(400).json({ status: 'FAIL', message: 'You have reached the maximum allowed attempts for this quiz.' });
+        if (parseInt(pastAttempts.rows[0].count) > 0) {
+            return res.status(400).json({ status: 'FAIL', message: 'You have already submitted this quiz and cannot attempt it again.' });
         }
 
         // Cancel any IN_PROGRESS attempts for this user and quiz
