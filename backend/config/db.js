@@ -326,6 +326,12 @@ class InMemoryDB {
             if (upper.includes('COUNT(*)')) {
                 return { rows: [{ count: this.attempts.length }] };
             }
+            if (upper.includes('WHERE A.ID = $1') || upper.includes('WHERE ID = $1')) {
+                const attId = Number(params[0]);
+                const att = this.attempts.find(a => a.id === attId) || this.attempts[0];
+                const quiz = this.quizzes.find(q => q.id === (att?.quiz_id || 1)) || this.quizzes[0];
+                return { rows: [{ ...att, quiz_title: quiz?.title || 'Assessment', passing_score: quiz?.passing_score || 70, negative_marks: quiz?.negative_marks || 0 }] };
+            }
             if (upper.includes('WHERE A.QUIZ_ID = $1') || upper.includes('WHERE QUIZ_ID = $1')) {
                 return { rows: this.attempts };
             }

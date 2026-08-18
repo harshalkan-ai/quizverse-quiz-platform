@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
-import { LogIn, Shield, UserCheck, Sparkles } from 'lucide-react';
+import { LogIn, Sparkles } from 'lucide-react';
 
 const Login = () => {
-    const [email, setEmail] = useState('admin@quizverse.com');
-    const [password, setPassword] = useState('AdminPassword123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -23,14 +23,15 @@ const Login = () => {
     const navigate = useNavigate();
     const { loginState } = useAuth();
 
-    const doLogin = async (targetEmail, targetPassword) => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
             const response = await axiosInstance.post('/auth/login', {
-                email: targetEmail,
-                password: targetPassword
+                email,
+                password
             });
             const { user, token } = response.data.data;
 
@@ -42,42 +43,11 @@ const Login = () => {
                 navigate('/student/dashboard');
             }
         } catch (err) {
-            // If backend is unreachable or credentials don't match, provide instant seamless mock access
-            console.warn('Backend login fallback active:', err.message);
-            const isAdmin = targetEmail.includes('admin');
-            const fallbackUser = {
-                id: isAdmin ? 1 : 2,
-                name: isAdmin ? 'Admin Owner' : 'Demo Student',
-                email: targetEmail,
-                role: isAdmin ? 'ADMIN' : 'STUDENT'
-            };
-            const fallbackToken = 'mock_jwt_token_for_instant_demo_' + Date.now();
-            loginState(fallbackUser, fallbackToken);
-            if (isAdmin) {
-                navigate('/admin/dashboard');
-            } else {
-                navigate('/student/dashboard');
-            }
+            console.error('Login Error:', err);
+            setError(err.response?.data?.message || 'Invalid credentials or server error.');
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await doLogin(email, password);
-    };
-
-    const quickLoginAdmin = async () => {
-        setEmail('admin@quizverse.com');
-        setPassword('AdminPassword123');
-        await doLogin('admin@quizverse.com', 'AdminPassword123');
-    };
-
-    const quickLoginStudent = async () => {
-        setEmail('student@quizverse.com');
-        setPassword('StudentPassword123');
-        await doLogin('student@quizverse.com', 'StudentPassword123');
     };
 
     const handleRequestOtp = async (e) => {
@@ -134,32 +104,6 @@ const Login = () => {
                     <p className="text-slate-400 text-sm mt-1">Interactive Quiz Platform & Assessment Hub</p>
                 </div>
 
-                {/* Instant 1-Click Zero-Credential Demo Buttons */}
-                <div className="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                        <span>⚡ 1-CLICK INSTANT DEMO LOGIN</span>
-                        <span className="text-[11px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Zero Credentials</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            type="button"
-                            onClick={quickLoginAdmin}
-                            disabled={loading}
-                            className="flex items-center justify-center gap-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white text-xs font-medium py-2.5 px-3 rounded-lg shadow transition cursor-pointer disabled:opacity-50"
-                        >
-                            <Shield className="w-3.5 h-3.5" /> Admin Demo
-                        </button>
-                        <button
-                            type="button"
-                            onClick={quickLoginStudent}
-                            disabled={loading}
-                            className="flex items-center justify-center gap-1.5 bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-medium py-2.5 px-3 rounded-lg shadow transition cursor-pointer disabled:opacity-50"
-                        >
-                            <UserCheck className="w-3.5 h-3.5" /> Student Demo
-                        </button>
-                    </div>
-                </div>
-
                 {error && (
                     <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg">
                         {error}
@@ -175,7 +119,7 @@ const Login = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
-                            placeholder="admin@quizverse.com"
+                            placeholder="user@example.com"
                         />
                     </div>
 
