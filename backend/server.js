@@ -97,23 +97,29 @@ async function initDatabase() {
 }
 
 async function seedAdmin() {
-    try {
-        const email = 'admin@quizverse.com';
-        const checkRes = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (checkRes.rows.length === 0) {
-            const salt = await bcrypt.genSalt(10);
-            const passwordHash = await bcrypt.hash('AdminPassword123', salt);
-            await db.query(
-                `INSERT INTO users (name, email, password_hash, role) 
-                 VALUES ($1, $2, $3, $4)`,
-                ['Admin Owner', email, passwordHash, 'ADMIN']
-            );
-            console.log('✅ Default Admin account seeded successfully: admin@quizverse.com / AdminPassword123');
-        } else {
-            console.log('ℹ️ Admin account already exists, skipping seed.');
+    const accounts = [
+        { name: 'Admin Owner',   email: 'admin@quizverse.com',   password: 'AdminPassword123', role: 'ADMIN'   },
+        { name: 'Demo Student',  email: 'student@quizverse.com', password: 'Password123',      role: 'STUDENT' },
+        { name: 'Student One',   email: 'student@gmail.com',     password: 'Password123',      role: 'STUDENT' },
+        { name: 'Gansur Student',email: 'gansur123@gmail.com',   password: 'Password123',      role: 'STUDENT' },
+        { name: 'Swastik Student',email: 'swastik@gmail.com',   password: 'Password123',      role: 'STUDENT' },
+    ];
+    for (const acc of accounts) {
+        try {
+            const checkRes = await db.query('SELECT id FROM users WHERE email = $1', [acc.email]);
+            if (checkRes.rows.length === 0) {
+                const passwordHash = await bcrypt.hash(acc.password, 10);
+                await db.query(
+                    `INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)`,
+                    [acc.name, acc.email, passwordHash, acc.role]
+                );
+                console.log(`✅ Seeded account: ${acc.email} (${acc.role})`);
+            } else {
+                console.log(`ℹ️ Account already exists, skipping: ${acc.email}`);
+            }
+        } catch (err) {
+            console.error(`❌ Error seeding account ${acc.email}:`, err.message);
         }
-    } catch (err) {
-        console.error('❌ Error seeding default admin:', err);
     }
 }
 

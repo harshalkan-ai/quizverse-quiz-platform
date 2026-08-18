@@ -10,7 +10,7 @@ class InMemoryDB {
                 id: 1,
                 name: 'Admin Owner',
                 email: 'admin@quizverse.com',
-                password_hash: '$2a$10$wT8c3x5bL0N3kK0s1o2qOe7Q6P4v9u8t7r6e5w4q3a2s1d0f9g8h',
+                password_hash: 'PLACEHOLDER_ADMIN',
                 role: 'ADMIN',
                 created_at: new Date()
             },
@@ -18,7 +18,31 @@ class InMemoryDB {
                 id: 2,
                 name: 'Demo Student',
                 email: 'student@quizverse.com',
-                password_hash: '$2a$10$wT8c3x5bL0N3kK0s1o2qOe7Q6P4v9u8t7r6e5w4q3a2s1d0f9g8h',
+                password_hash: 'PLACEHOLDER_STUDENT',
+                role: 'STUDENT',
+                created_at: new Date()
+            },
+            {
+                id: 3,
+                name: 'Student One',
+                email: 'student@gmail.com',
+                password_hash: 'PLACEHOLDER_STUDENT',
+                role: 'STUDENT',
+                created_at: new Date()
+            },
+            {
+                id: 4,
+                name: 'Gansur Student',
+                email: 'gansur123@gmail.com',
+                password_hash: 'PLACEHOLDER_STUDENT',
+                role: 'STUDENT',
+                created_at: new Date()
+            },
+            {
+                id: 5,
+                name: 'Swastik Student',
+                email: 'swastik@gmail.com',
+                password_hash: 'PLACEHOLDER_STUDENT',
                 role: 'STUDENT',
                 created_at: new Date()
             }
@@ -186,11 +210,14 @@ class InMemoryDB {
     }
 
     async initHashes() {
-        const salt = await bcrypt.genSalt(10);
-        const adminHash = await bcrypt.hash('AdminPassword123', salt);
-        const studentHash = await bcrypt.hash('StudentPassword123', salt);
-        this.users[0].password_hash = adminHash;
-        this.users[1].password_hash = studentHash;
+        const adminHash   = await bcrypt.hash('AdminPassword123', 10);
+        const studentHash = await bcrypt.hash('Password123', 10);
+        // Apply correct hashes to all seeded users
+        this.users.forEach(u => {
+            if (u.role === 'ADMIN')   u.password_hash = adminHash;
+            if (u.role === 'STUDENT') u.password_hash = studentHash;
+        });
+        console.log('✅ In-memory user password hashes initialized.');
     }
 
     async query(text, params = []) {
