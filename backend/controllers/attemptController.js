@@ -134,8 +134,9 @@ async function submitAttempt(req, res) {
         const percentage   = totalMarks > 0
             ? Number(((clampedScore / totalMarks) * 100).toFixed(2))
             : 0;
-        const passingScore = Number(quiz.passing_score) || 70;
-        const finalStatus  = percentage >= passingScore ? 'PASSED' : 'FAILED';
+        attempt.passing_score = attempt.passing_score || quiz.passing_score || 70;
+        const isPassed = percentage >= Number(attempt.passing_score || 70);
+        const finalStatus = isPassed ? 'PASSED' : 'FAILED';
 
         const startTime        = attempt.started_at ? new Date(attempt.started_at) : new Date();
         const timeTakenSeconds = Math.max(0, Math.floor((new Date() - startTime) / 1000));
@@ -208,7 +209,11 @@ async function getAttemptById(req, res) {
         // Ensure calculated passed flag and numbers
         const passingScore = Number(attempt.passing_score) || 70;
         const percentage = Number(attempt.percentage) || 0;
-        attempt.passed = attempt.status === 'PASSED' || percentage >= passingScore;
+        
+        // Force status evaluation:
+        const isPassed = percentage >= passingScore;
+        attempt.status = isPassed ? 'PASSED' : 'FAILED';
+        attempt.passed = isPassed;
 
         // Fetch questions, options, explanations, and user answer
         const qRes = await db.query('SELECT * FROM questions WHERE quiz_id = $1', [attempt.quiz_id]);
@@ -217,14 +222,29 @@ async function getAttemptById(req, res) {
         const resultQuestions = [];
         for (const q of questions) {
             const optRes = await db.query('SELECT id, option_text, is_correct FROM options WHERE question_id = $1', [q.id]);
-            const ansRes = await db.query('SELECT selected_option_id FROM answers WHERE attempt_id = $1 AND question_id = $2', [id, q.id]);
+            const ansRes = await db.query('SELECT selected_option_id, is_correct FROM answers WHERE attempt_id = $1 AND question_id = $2', [id, q.id]);
             
+            const user_answer = ansRes.rows.length > 0 ? {
+                selected_option_id: ansRes.rows[0].selected_option_id,
+                is_correct: ansRes.rows[0].is_correct === true || ansRes.rows[0].is_correct === 'true'
+            } : null;
+
             resultQuestions.push({
                 ...q,
                 options: optRes.rows,
-                user_selected_option_id: ansRes.rows.length > 0 ? ansRes.rows[0].selected_option_id : null
+                user_selected_option_id: user_answer ? user_answer.selected_option_id : null,
+                user_answer: user_answer
             });
         }
+
+        // Dynamically compute correct answers count if 0
+        const correctCount = resultQuestions.filter(q => q.user_answer && q.user_answer.is_correct === true).length;
+        const incorrectCount = resultQuestions.filter(q => q.user_answer && q.user_answer.is_correct === false).length;
+        const unansweredCount = resultQuestions.filter(q => !q.user_answer || !q.user_answer.selected_option_id).length;
+
+        attempt.correct_answers = Number(attempt.correct_answers) || correctCount;
+        attempt.incorrect_answers = Number(attempt.incorrect_answers) || incorrectCount;
+        attempt.unanswered = Number(attempt.unanswered) || unansweredCount;
 
         return res.status(200).json({
             status: 'SUCCESS',

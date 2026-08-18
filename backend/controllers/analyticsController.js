@@ -80,22 +80,22 @@ async function getLeaderboard(req, res) {
 
         let query = `
             SELECT u.id, 
-                   u.name, 
+                   u.name as student_name, 
                    COUNT(a.id)::int as total_taken, 
-                   ROUND(AVG(a.percentage), 2) as avg_score, 
-                   MAX(a.percentage) as highest_score 
+                   ROUND(COALESCE(AVG(a.percentage), 0)::numeric, 1)::float as avg_score, 
+                   ROUND(COALESCE(MAX(a.percentage), 0)::numeric, 1)::float as highest_score 
             FROM users u 
-            JOIN attempts a ON u.id = a.user_id 
+            LEFT JOIN attempts a ON u.id = a.user_id AND a.status != 'IN_PROGRESS'
         `;
 
         const params = [];
         
         // If filtering by category, we need to join quizzes and check category_id
         if (category_id) {
-            query += ` JOIN quizzes q ON a.quiz_id = q.id `;
+            query += ` LEFT JOIN quizzes q ON a.quiz_id = q.id `;
         }
 
-        query += ` WHERE a.status != 'IN_PROGRESS' AND u.role = 'STUDENT' `;
+        query += ` WHERE u.role = 'STUDENT' `;
 
         if (category_id) {
             params.push(category_id);

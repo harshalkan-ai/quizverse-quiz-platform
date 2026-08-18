@@ -195,6 +195,24 @@ class InMemoryDB {
 
         // USERS queries
         if (upper.includes('FROM USERS')) {
+            if (upper.includes('TOTAL_TAKEN') || upper.includes('AVG_SCORE')) {
+                const students = this.users.filter(u => u.role === 'STUDENT');
+                const rows = students.map(u => {
+                    const userAtts = this.attempts.filter(a => String(a.user_id) === String(u.id) && a.status !== 'IN_PROGRESS');
+                    const avg = userAtts.length > 0 ? Number((userAtts.reduce((sum, a) => sum + Number(a.percentage || 0), 0) / userAtts.length).toFixed(1)) : 0;
+                    const max = userAtts.length > 0 ? Number((Math.max(...userAtts.map(a => Number(a.percentage || 0)))).toFixed(1)) : 0;
+                    return {
+                        id: u.id,
+                        student_name: u.name,
+                        total_taken: userAtts.length,
+                        avg_score: avg,
+                        highest_score: max
+                    };
+                });
+                // Sort by avg_score DESC, total_taken DESC
+                rows.sort((a, b) => b.avg_score - a.avg_score || b.total_taken - a.total_taken);
+                return { rows: rows.slice(0, 10) };
+            }
             if (upper.includes('WHERE EMAIL = $1')) {
                 const user = this.users.find(u => u.email.toLowerCase() === (params[0] || '').toLowerCase());
                 return { rows: user ? [user] : [] };

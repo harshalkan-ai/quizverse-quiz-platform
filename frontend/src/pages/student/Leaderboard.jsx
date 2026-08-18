@@ -44,25 +44,25 @@ const Leaderboard = () => {
         if (index === 0) {
             return (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                    <Trophy className="w-3.5 h-3.5 fill-amber-300" /> 🥇 Rank #1 (Gold)
+                    <Trophy className="w-3.5 h-3.5 fill-amber-300" /> #1 Gold 🥇
                 </span>
             );
         }
         if (index === 1) {
             return (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-300/20 text-slate-300 border border-slate-300/30">
-                    <Medal className="w-3.5 h-3.5 fill-slate-300" /> 🥈 Rank #2 (Silver)
+                    <Medal className="w-3.5 h-3.5 fill-slate-300" /> #2 Silver 🥈
                 </span>
             );
         }
         if (index === 2) {
             return (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-600/20 text-amber-500 border border-amber-600/30">
-                    <Medal className="w-3.5 h-3.5 fill-amber-500" /> 🥉 Rank #3 (Bronze)
+                    <Medal className="w-3.5 h-3.5 fill-amber-500" /> #3 Bronze 🥉
                 </span>
             );
         }
-        return <span className="text-slate-400 font-semibold pl-4">Rank #{index + 1}</span>;
+        return <span className="text-slate-400 font-semibold pl-4">#{index + 1}</span>;
     };
 
     const getStatusBadge = (avgScore) => {
@@ -157,7 +157,7 @@ const Leaderboard = () => {
                                 {(leaderboard || [])?.map((student, idx) => (
                                     <tr 
                                         key={student?.id || idx} 
-                                        className={`hover:bg-slate-850 transition-colors ${
+                                        className={`hover:bg-slate-855 transition-colors ${
                                             idx < 3 ? 'bg-indigo-500/[0.02]' : ''
                                         }`}
                                     >
@@ -165,19 +165,19 @@ const Leaderboard = () => {
                                             {getRankBadge(idx)}
                                         </td>
                                         <td className="px-6 py-4 font-semibold text-slate-200">
-                                            {student?.name}
+                                            {student?.student_name || student?.name}
                                         </td>
                                         <td className="px-6 py-4 text-center font-mono font-medium">
-                                            {student?.total_taken}
+                                            {student?.total_taken || 0}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="font-mono font-bold text-indigo-400">
-                                                {student?.avg_score}%
+                                                {student?.avg_score ?? 0}%
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="font-mono font-bold text-emerald-400">
-                                                {student?.highest_score}%
+                                                {student?.highest_score ?? 0}%
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
