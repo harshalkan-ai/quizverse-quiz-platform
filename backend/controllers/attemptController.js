@@ -164,7 +164,7 @@ async function submitAttempt(req, res) {
             user_id: userId,
             score,
             percentage,
-            passing_score: passingScore,
+            passing_score: attempt.passing_score,
             correct_answers:     correctAnswersCount,
             incorrect_answers:   incorrectAnswersCount,
             unanswered:          unansweredCount,

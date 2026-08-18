@@ -51,8 +51,12 @@ class InMemoryDB {
             { id: 1, name: 'JavaScript', description: 'Modern JavaScript concepts, scoping, event loops, and asynchronous operations.' },
             { id: 2, name: 'Python', description: 'Python language structure, lists, OOP principles, and functional paradigms.' },
             { id: 3, name: 'Databases', description: 'Relational database structures, SQL query building, and transactions.' },
-            { id: 4, name: 'Security', description: 'Web application security principles, hashing algorithms, and vulnerability mitigations.' }
+            { id: 4, name: 'Security', description: 'Web application security principles, hashing algorithms, and vulnerability mitigations.' },
+            { id: 5, name: 'React', description: 'React design patterns, rendering lifecycles, and component state managers.' },
+            { id: 6, name: 'Computer Science', description: 'Basic and advanced computer science data structures and sorting algorithms.' },
+            { id: 7, name: 'Cloud Computing', description: 'Amazon Web Services (AWS) solutions architecture, instances, and storage buckets.' }
         ];
+
         this.quizzes = [
             {
                 id: 1,
@@ -63,7 +67,7 @@ class InMemoryDB {
                 difficulty: 'INTERMEDIATE',
                 duration_minutes: 20,
                 passing_score: 70,
-                max_attempts: 3,
+                max_attempts: 1,
                 negative_marks: 0.50,
                 status: 'PUBLISHED',
                 created_at: new Date()
@@ -77,7 +81,7 @@ class InMemoryDB {
                 difficulty: 'INTERMEDIATE',
                 duration_minutes: 20,
                 passing_score: 70,
-                max_attempts: 3,
+                max_attempts: 1,
                 negative_marks: 0.50,
                 status: 'PUBLISHED',
                 created_at: new Date()
@@ -91,7 +95,7 @@ class InMemoryDB {
                 difficulty: 'HARD',
                 duration_minutes: 25,
                 passing_score: 75,
-                max_attempts: 2,
+                max_attempts: 1,
                 negative_marks: 0.50,
                 status: 'PUBLISHED',
                 created_at: new Date()
@@ -105,66 +109,117 @@ class InMemoryDB {
                 difficulty: 'HARD',
                 duration_minutes: 20,
                 passing_score: 80,
-                max_attempts: 2,
+                max_attempts: 1,
                 negative_marks: 1.00,
+                status: 'PUBLISHED',
+                created_at: new Date()
+            },
+            {
+                id: 5,
+                title: 'React & Frontend Architecture',
+                description: 'Verify your proficiency in modern single page React applications, state handlers, hooks, and Virtual DOM reconciliations.',
+                category_id: 5,
+                category_name: 'React',
+                difficulty: 'INTERMEDIATE',
+                duration_minutes: 15,
+                passing_score: 70,
+                max_attempts: 1,
+                negative_marks: 0.25,
+                status: 'PUBLISHED',
+                created_at: new Date()
+            },
+            {
+                id: 6,
+                title: 'Data Structures & Algorithms',
+                description: 'Evaluate your algorithm problem-solving abilities, covering stack structures, queues, trees, and algorithmic complexity.',
+                category_id: 6,
+                category_name: 'Computer Science',
+                difficulty: 'HARD',
+                duration_minutes: 30,
+                passing_score: 75,
+                max_attempts: 1,
+                negative_marks: 0.50,
+                status: 'PUBLISHED',
+                created_at: new Date()
+            },
+            {
+                id: 7,
+                title: 'Cloud Computing & AWS',
+                description: 'Accredit your knowledge in Amazon Web Services (AWS) deployment environments, scalable compute nodes, and object stores.',
+                category_id: 7,
+                category_name: 'Cloud Computing',
+                difficulty: 'INTERMEDIATE',
+                duration_minutes: 20,
+                passing_score: 70,
+                max_attempts: 1,
+                negative_marks: 0.50,
                 status: 'PUBLISHED',
                 created_at: new Date()
             }
         ];
-        this.questions = [
-            {
-                id: 1,
-                quiz_id: 1,
-                question_text: "What is the evaluated output of 'typeof null' in JavaScript?",
-                marks: 5,
-                explanation: "Historically in JavaScript, typeof null returns 'object' due to legacy memory representation.",
-                options: [
-                    { id: 1, option_text: 'object', is_correct: true },
-                    { id: 2, option_text: 'null', is_correct: false },
-                    { id: 3, option_text: 'undefined', is_correct: false },
-                    { id: 4, option_text: 'function', is_correct: false }
-                ]
-            },
-            {
-                id: 2,
-                quiz_id: 1,
-                question_text: "Which value is returned when evaluating '0.1 + 0.2 === 0.3' in standard JS?",
-                marks: 5,
-                explanation: "IEEE 754 floating point arithmetic precision yields 0.30000000000000004 != 0.3.",
-                options: [
-                    { id: 5, option_text: 'false', is_correct: true },
-                    { id: 6, option_text: 'true', is_correct: false },
-                    { id: 7, option_text: 'undefined', is_correct: false },
-                    { id: 8, option_text: 'TypeError', is_correct: false }
-                ]
-            },
-            {
-                id: 3,
-                quiz_id: 2,
-                question_text: "Which keyword is used to define functions in Python?",
-                marks: 5,
-                explanation: "'def' is the Python keyword for function declaration.",
-                options: [
-                    { id: 9, option_text: 'def', is_correct: true },
-                    { id: 10, option_text: 'function', is_correct: false },
-                    { id: 11, option_text: 'fn', is_correct: false },
-                    { id: 12, option_text: 'define', is_correct: false }
-                ]
-            },
-            {
-                id: 4,
-                quiz_id: 3,
-                question_text: "What does ACID stand for in database transaction processing?",
-                marks: 5,
-                explanation: "Atomicity, Consistency, Isolation, and Durability.",
-                options: [
-                    { id: 13, option_text: 'Atomicity, Consistency, Isolation, Durability', is_correct: true },
-                    { id: 14, option_text: 'Access, Control, Index, Dependency', is_correct: false },
-                    { id: 15, option_text: 'Atomicity, Concurrency, Integrity, Durability', is_correct: false },
-                    { id: 16, option_text: 'Allocation, Consistency, Isolation, Database', is_correct: false }
-                ]
+
+        this.questions = [];
+        let optionIdCounter = 1;
+        let questionIdCounter = 1;
+
+        const templates = {
+            1: [
+                { text: "What is the evaluated output of 'typeof null' in JavaScript?", correct: "object", opts: ["object", "null", "undefined", "function"], exp: "typeof null returns 'object' due to legacy memory representation." },
+                { text: "Which value is returned when evaluating '0.1 + 0.2 === 0.3' in standard JS?", correct: "false", opts: ["false", "true", "undefined", "TypeError"], exp: "Floating point precision yields 0.30000000000000004 != 0.3." }
+            ],
+            2: [
+                { text: "Which keyword is used to define functions in Python?", correct: "def", opts: ["def", "function", "fn", "define"], exp: "'def' is the Python keyword for function declaration." },
+                { text: "What is the output of len([1, 2, 3]) in Python?", correct: "3", opts: ["3", "4", "2", "Error"], exp: "len() returns the size of the list which is 3." }
+            ],
+            3: [
+                { text: "What does ACID stand for in database transaction processing?", correct: "Atomicity, Consistency, Isolation, Durability", opts: ["Atomicity, Consistency, Isolation, Durability", "Access, Control, Index, Dependency", "Atomicity, Concurrency, Integrity, Durability", "Allocation, Consistency, Isolation, Database"], exp: "ACID represents Atomicity, Consistency, Isolation, Durability." },
+                { text: "Which SQL command deletes a table structure permanently?", correct: "DROP TABLE", opts: ["DROP TABLE", "DELETE TABLE", "TRUNCATE TABLE", "REMOVE TABLE"], exp: "DROP TABLE removes both table structure and data." }
+            ],
+            4: [
+                { text: "Which hashing algorithm is widely recommended for password hashing?", correct: "bcrypt", opts: ["bcrypt", "MD5", "SHA-1", "SHA-256"], exp: "bcrypt is slow and incorporates salts, protecting against brute force." },
+                { text: "What secure flag prevents script access to cookies?", correct: "HttpOnly", opts: ["HttpOnly", "Secure", "SameSite", "Path"], exp: "HttpOnly prevents XSS cookie theft." }
+            ],
+            5: [
+                { text: "Which React hook is used to perform side effects in functional components?", correct: "useEffect", opts: ["useEffect", "useState", "useContext", "useReducer"], exp: "useEffect runs side effects after render." },
+                { text: "What is the virtual DOM in React?", correct: "A lightweight representation of the real DOM in memory", opts: ["A lightweight representation of the real DOM in memory", "A direct connection to the browser document", "A database store running inside index.js", "An styling engine replacing CSS files"], exp: "Virtual DOM syncs with the real DOM via reconciliation." }
+            ],
+            6: [
+                { text: "What is the average time complexity of searching a value in a binary search tree?", correct: "O(log n)", opts: ["O(log n)", "O(n)", "O(1)", "O(n log n)"], exp: "Each step cuts search space in half." },
+                { text: "Which data structure operates on a Last-In, First-Out (LIFO) model?", correct: "Stack", opts: ["Stack", "Queue", "Linked List", "Graph"], exp: "Stacks push/pop from the top." }
+            ],
+            7: [
+                { text: "Which AWS service provides resizable compute capacity in the cloud?", correct: "EC2", opts: ["EC2", "S3", "RDS", "Lambda"], exp: "EC2 stands for Elastic Compute Cloud." },
+                { text: "What is the primary usage of Amazon S3?", correct: "Object storage service for data and assets", opts: ["Object storage service for data and assets", "Relational database hosting", "DNS routing domain manager", "Direct virtual machine instances"], exp: "S3 stands for Simple Storage Service." }
+            ]
+        };
+
+        this.quizzes.forEach(quiz => {
+            const qTemplates = templates[quiz.id] || [
+                { text: `Sample Question for ${quiz.title}`, correct: "Option A", opts: ["Option A", "Option B", "Option C", "Option D"], exp: "Sample explanation." }
+            ];
+
+            for (let i = 0; i < 20; i++) {
+                const template = qTemplates[i % qTemplates.length];
+                const qId = questionIdCounter++;
+                const optsList = template.opts.map(text => {
+                    return {
+                        id: optionIdCounter++,
+                        option_text: text,
+                        is_correct: text === template.correct
+                    };
+                });
+                
+                this.questions.push({
+                    id: qId,
+                    quiz_id: quiz.id,
+                    question_text: i >= qTemplates.length ? `${template.text} (Variant ${Math.floor(i / qTemplates.length) + 1})` : template.text,
+                    marks: 5,
+                    explanation: template.exp,
+                    options: optsList
+                });
             }
-        ];
+        });
+
         this.attempts = [];
         this.answers = [];
         this.nextId = 100;

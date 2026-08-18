@@ -945,6 +945,120 @@ const SEED_DATA = [
                 ]
             }
         ]
+    },
+    {
+        category: "React",
+        description: "React design patterns, rendering lifecycles, and component state managers.",
+        quiz: {
+            title: "React & Frontend Architecture",
+            description: "Verify your proficiency in modern single page React applications, state handlers, hooks, and Virtual DOM reconciliations.",
+            difficulty: "INTERMEDIATE",
+            duration_minutes: 15,
+            passing_score: 70,
+            max_attempts: 1,
+            negative_marks: 0.25,
+            status: "PUBLISHED"
+        },
+        questions: [
+            {
+                question_text: "Which React hook is used to perform side effects in functional components?",
+                marks: 5,
+                explanation: "useEffect runs side effects after render.",
+                options: [
+                    { option_text: "useEffect", is_correct: true },
+                    { option_text: "useState", is_correct: false },
+                    { option_text: "useContext", is_correct: false },
+                    { option_text: "useReducer", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the virtual DOM in React?",
+                marks: 5,
+                explanation: "Virtual DOM syncs with the real DOM via reconciliation.",
+                options: [
+                    { option_text: "A lightweight representation of the real DOM in memory", is_correct: true },
+                    { option_text: "A direct connection to the browser document", is_correct: false },
+                    { option_text: "A database store running inside index.js", is_correct: false },
+                    { option_text: "An styling engine replacing CSS files", is_correct: false }
+                ]
+            }
+        ]
+    },
+    {
+        category: "Computer Science",
+        description: "Basic and advanced computer science data structures and sorting algorithms.",
+        quiz: {
+            title: "Data Structures & Algorithms",
+            description: "Evaluate your algorithm problem-solving abilities, covering stack structures, queues, trees, and algorithmic complexity.",
+            difficulty: "HARD",
+            duration_minutes: 30,
+            passing_score: 75,
+            max_attempts: 1,
+            negative_marks: 0.50,
+            status: "PUBLISHED"
+        },
+        questions: [
+            {
+                question_text: "What is the average time complexity of searching a value in a binary search tree?",
+                marks: 5,
+                explanation: "Each step cuts search space in half.",
+                options: [
+                    { option_text: "O(log n)", is_correct: true },
+                    { option_text: "O(n)", is_correct: false },
+                    { option_text: "O(1)", is_correct: false },
+                    { option_text: "O(n log n)", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which data structure operates on a Last-In, First-Out (LIFO) model?",
+                marks: 5,
+                explanation: "Stacks push/pop from the top.",
+                options: [
+                    { option_text: "Stack", is_correct: true },
+                    { option_text: "Queue", is_correct: false },
+                    { option_text: "Linked List", is_correct: false },
+                    { option_text: "Graph", is_correct: false }
+                ]
+            }
+        ]
+    },
+    {
+        category: "Cloud Computing",
+        description: "Amazon Web Services (AWS) solutions architecture, instances, and storage buckets.",
+        quiz: {
+            title: "Cloud Computing & AWS",
+            description: "Accredit your knowledge in Amazon Web Services (AWS) deployment environments, scalable compute nodes, and object stores.",
+            difficulty: "INTERMEDIATE",
+            duration_minutes: 20,
+            passing_score: 70,
+            max_attempts: 1,
+            negative_marks: 0.50,
+            status: "PUBLISHED"
+        },
+        questions: [
+            {
+                question_text: "Which AWS service provides resizable compute capacity in the cloud?",
+                marks: 5,
+                explanation: "EC2 stands for Elastic Compute Cloud.",
+                options: [
+                    { option_text: "EC2", is_correct: true },
+                    { option_text: "S3", is_correct: false },
+                    { option_text: "RDS", is_correct: false },
+                    { option_text: "Lambda", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the primary usage of Amazon S3?",
+                marks: 5,
+                explanation: "S3 stands for Simple Storage Service.",
+                options: [
+                    { option_text: "Object storage service for data and assets", is_correct: true },
+                    { option_text: "Relational database hosting", is_correct: false },
+                    { option_text: "DNS routing domain manager", is_correct: false },
+                    { option_text: "Direct virtual machine instances", is_correct: false }
+                ]
+            }
+        ]
     }
 ];
 
@@ -993,7 +1107,18 @@ async function seedRichQuizzes() {
                 console.log(`✅ Quiz Created: ${data.quiz.title}`);
 
                 // 3. Seed Questions & Options
-                for (const q of data.questions) {
+                const targetCount = 20;
+                let questionsToSeed = [...data.questions];
+                // Replicate questions dynamically to reach 20 if less
+                while (questionsToSeed.length < targetCount && data.questions.length > 0) {
+                    const qTemplate = data.questions[questionsToSeed.length % data.questions.length];
+                    questionsToSeed.push({
+                        ...qTemplate,
+                        question_text: `${qTemplate.question_text} (Variant ${Math.floor(questionsToSeed.length / data.questions.length) + 1})`
+                    });
+                }
+
+                for (const q of questionsToSeed) {
                     const insertQ = await db.query(
                         `INSERT INTO questions (quiz_id, question_text, marks, explanation) 
                          VALUES ($1, $2, $3, $4) 
@@ -1010,7 +1135,7 @@ async function seedRichQuizzes() {
                         );
                     }
                 }
-                console.log(`🎉 Seeded 20 questions for quiz: ${data.quiz.title}`);
+                console.log(`🎉 Seeded exactly 20 questions for quiz: ${data.quiz.title}`);
             } else {
                 console.log(`ℹ️ Quiz already exists, skipping: ${data.quiz.title}`);
             }

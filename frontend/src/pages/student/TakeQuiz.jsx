@@ -79,6 +79,13 @@ const TakeQuiz = () => {
         }
     };
 
+    const scrollToQuestion = (idx) => {
+        const el = document.getElementById(`question-card-${idx}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
     const formatTime = (seconds) => {
         const s = Math.max(0, parseInt(seconds, 10) || 0);
         const m = Math.floor(s / 60);
@@ -96,7 +103,6 @@ const TakeQuiz = () => {
     }
 
     const questions = attempt?.questions || [];
-    const currentQuestion = questions[currentQIndex];
     const answeredCount = Object.keys(answers || {}).length;
     const unansweredCount = questions.length - answeredCount;
 
@@ -127,69 +133,53 @@ const TakeQuiz = () => {
             </header>
 
             <main className="max-w-7xl mx-auto w-full p-4 md:p-8 flex flex-col md:flex-row gap-8 flex-1">
-                {/* Main Question Area */}
-                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-10 shadow-xl flex flex-col">
-                    <div className="mb-8">
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="text-indigo-400 font-bold tracking-wider text-sm uppercase">
-                                Question {currentQIndex + 1} of {questions.length}
-                            </span>
-                            <span className="text-slate-400 font-medium bg-slate-800 px-3 py-1 rounded-full text-xs">
-                                {currentQuestion?.marks} Marks
-                            </span>
-                        </div>
-                        <h2 className="text-2xl font-medium leading-relaxed text-slate-100">
-                            {currentQuestion?.question_text}
-                        </h2>
-                    </div>
-
-                    <div className="space-y-3 flex-1">
-                        {(currentQuestion?.options || [])?.map((opt) => {
-                            const isSelected = answers[currentQuestion?.id] === opt?.id;
-                            return (
-                                <button
-                                    key={opt?.id}
-                                    onClick={() => handleSelectOption(currentQuestion?.id, opt?.id)}
-                                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4 cursor-pointer ${
-                                        isSelected
-                                            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300 shadow-lg shadow-indigo-500/10'
-                                            : 'border-slate-800 bg-slate-800/30 text-slate-300 hover:border-slate-600 hover:bg-slate-800'
-                                    }`}
-                                >
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 shrink-0 transition-colors ${
-                                        isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-500'
-                                    }`}>
-                                        {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
-                                    </div>
-                                    <span className="text-lg">{opt?.option_text}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Navigation Buttons */}
-                    <div className="flex justify-between items-center mt-12 pt-6 border-t border-slate-800">
-                        <button
-                            onClick={() => setCurrentQIndex(prev => Math.max(0, prev - 1))}
-                            disabled={currentQIndex === 0}
-                            className="flex items-center gap-2 text-slate-400 hover:text-slate-200 font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                {/* Main scrollable list of all questions */}
+                <div className="flex-1 space-y-6">
+                    {(questions || []).map((q, idx) => (
+                        <div 
+                            key={q.id || idx} 
+                            id={`question-card-${idx}`}
+                            className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-8 shadow-xl flex flex-col"
                         >
-                            <ChevronLeft className="w-5 h-5" /> Previous
-                        </button>
+                            <div className="mb-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="text-indigo-400 font-bold tracking-wider text-sm uppercase">
+                                        Question {idx + 1} of {questions.length}
+                                    </span>
+                                    <span className="text-slate-400 font-medium bg-slate-800 px-3 py-1 rounded-full text-xs">
+                                        {q.marks} Marks
+                                    </span>
+                                </div>
+                                <h2 className="text-xl md:text-2xl font-medium leading-relaxed text-slate-100">
+                                    {q.question_text}
+                                </h2>
+                            </div>
 
-                        {currentQIndex < questions.length - 1 ? (
-                            <button
-                                onClick={() => setCurrentQIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                                className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-medium transition-colors bg-indigo-500/10 px-6 py-2.5 rounded-lg hover:bg-indigo-500/20 cursor-pointer"
-                            >
-                                Next <ChevronRight className="w-5 h-5" />
-                            </button>
-                        ) : (
-                            <span className="text-emerald-500 font-medium flex items-center gap-2 bg-emerald-500/10 px-6 py-2.5 rounded-lg border border-emerald-500/20">
-                                <CheckCircle className="w-5 h-5" /> End of Quiz
-                            </span>
-                        )}
-                    </div>
+                            <div className="space-y-3">
+                                {(q.options || [])?.map((opt) => {
+                                    const isSelected = answers[q.id] === opt.id;
+                                    return (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => handleSelectOption(q.id, opt.id)}
+                                            className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4 cursor-pointer ${
+                                                isSelected
+                                                    ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300 shadow-lg shadow-indigo-500/10'
+                                                    : 'border-slate-800 bg-slate-800/30 text-slate-300 hover:border-slate-600 hover:bg-slate-800'
+                                            }`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 shrink-0 transition-colors ${
+                                                isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-500'
+                                            }`}>
+                                                {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+                                            </div>
+                                            <span className="text-lg">{opt.option_text}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Sidebar Question Palette */}
@@ -199,14 +189,11 @@ const TakeQuiz = () => {
                     <div className="grid grid-cols-5 gap-3">
                         {(questions || [])?.map((q, idx) => {
                             const isAnswered = !!answers[q?.id];
-                            const isCurrent = currentQIndex === idx;
                             return (
                                 <button
                                     key={q?.id || idx}
-                                    onClick={() => setCurrentQIndex(idx)}
+                                    onClick={() => scrollToQuestion(idx)}
                                     className={`w-10 h-10 rounded-lg text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
-                                        isCurrent ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-900' : ''
-                                    } ${
                                         isAnswered
                                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                             : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
