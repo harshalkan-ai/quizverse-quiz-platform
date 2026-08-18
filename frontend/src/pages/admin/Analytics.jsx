@@ -62,7 +62,7 @@ const Analytics = () => {
 
     const cards = [
         { name: 'Active Students', value: totalStudents, sub: `out of ${totalRegisteredStudents} registered`, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
-        { name: 'Total Quizzes', value: totalQuizzes, sub: 'Created categories', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+        { name: 'Total Quizzes', value: totalQuizzes, sub: 'Published assessments', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
         { name: 'Total Attempts', value: totalAttempts, sub: `${totalPassed} Passed, ${totalFailed} Failed`, icon: BarChart3, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
         { name: 'Average Score', value: `${avgScore}%`, sub: 'Overall platform percentage', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
     ];

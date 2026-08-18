@@ -82,10 +82,10 @@ async function getLeaderboard(req, res) {
             SELECT u.id, 
                    u.name as student_name, 
                    COUNT(a.id)::int as total_taken, 
-                   ROUND(COALESCE(AVG(a.percentage), 0)::numeric, 1)::float as avg_score, 
-                   ROUND(COALESCE(MAX(a.percentage), 0)::numeric, 1)::float as highest_score 
+                   ROUND(AVG(a.percentage)::numeric, 1)::float as avg_score, 
+                   ROUND(MAX(a.percentage)::numeric, 1)::float as highest_score 
             FROM users u 
-            LEFT JOIN attempts a ON u.id = a.user_id AND a.status != 'IN_PROGRESS'
+            JOIN attempts a ON u.id = a.user_id AND a.status != 'IN_PROGRESS'
         `;
 
         const params = [];

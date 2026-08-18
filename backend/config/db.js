@@ -220,7 +220,28 @@ class InMemoryDB {
             }
         });
 
-        this.attempts = [];
+        this.users = [
+            { id: 1, name: 'Admin Owner', email: 'admin@quizverse.com', password_hash: 'PLACEHOLDER_ADMIN', role: 'ADMIN', created_at: new Date() },
+            { id: 2, name: 'Demo Student', email: 'student@quizverse.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 3, name: 'Rahul Sharma', email: 'rahul@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 4, name: 'Priya Patel', email: 'priya@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 5, name: 'Amit Kumar', email: 'amit@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 6, name: 'Vikram Singh', email: 'vikram@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 7, name: 'Ananya Gupta', email: 'ananya@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 8, name: 'Sneha Reddy', email: 'sneha@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 9, name: 'Student One', email: 'student@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 10, name: 'Gansur Student', email: 'gansur123@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() },
+            { id: 11, name: 'Swastik Student', email: 'swastik@gmail.com', password_hash: 'PLACEHOLDER_STUDENT', role: 'STUDENT', created_at: new Date() }
+        ];
+
+        this.attempts = [
+            { id: 1, user_id: 3, user_name: 'Rahul Sharma', quiz_id: 1, score: 95, percentage: 95.0, correct_answers: 19, incorrect_answers: 1, unanswered: 0, time_taken_seconds: 420, passed: true, status: 'PASSED', started_at: new Date(Date.now() - 86400000), completed_at: new Date(Date.now() - 86000000) },
+            { id: 2, user_id: 7, user_name: 'Ananya Gupta', quiz_id: 1, score: 94, percentage: 94.0, correct_answers: 19, incorrect_answers: 1, unanswered: 0, time_taken_seconds: 380, passed: true, status: 'PASSED', started_at: new Date(Date.now() - 80000000), completed_at: new Date(Date.now() - 79600000) },
+            { id: 3, user_id: 4, user_name: 'Priya Patel', quiz_id: 2, score: 92, percentage: 92.0, correct_answers: 18, incorrect_answers: 2, unanswered: 0, time_taken_seconds: 450, passed: true, status: 'PASSED', started_at: new Date(Date.now() - 72000000), completed_at: new Date(Date.now() - 71500000) },
+            { id: 4, user_id: 8, user_name: 'Sneha Reddy', quiz_id: 3, score: 88, percentage: 88.0, correct_answers: 18, incorrect_answers: 2, unanswered: 0, time_taken_seconds: 510, passed: true, status: 'PASSED', started_at: new Date(Date.now() - 60000000), completed_at: new Date(Date.now() - 59400000) },
+            { id: 5, user_id: 5, user_name: 'Amit Kumar', quiz_id: 2, score: 85, percentage: 85.0, correct_answers: 17, incorrect_answers: 3, unanswered: 0, time_taken_seconds: 490, passed: true, status: 'PASSED', started_at: new Date(Date.now() - 50000000), completed_at: new Date(Date.now() - 49500000) },
+            { id: 6, user_id: 6, user_name: 'Vikram Singh', quiz_id: 4, score: 80, percentage: 80.0, correct_answers: 16, incorrect_answers: 4, unanswered: 0, time_taken_seconds: 530, passed: true, status: 'PASSED', started_at: new Date(Date.now() - 40000000), completed_at: new Date(Date.now() - 39400000) }
+        ];
         this.answers = [];
         this.nextId = 100;
     }
@@ -248,22 +269,52 @@ class InMemoryDB {
             return { rows: [{ now: new Date().toISOString() }] };
         }
 
+        // ADMIN ANALYTICS & CATEGORY BREAKDOWN JOIN
+        if (upper.includes('GROUP BY C.NAME') || (upper.includes('FROM ATTEMPTS A') && upper.includes('JOIN CATEGORIES C'))) {
+            const rows = this.categories.map(cat => {
+                const catQuizzes = this.quizzes.filter(q => q.category_id === cat.id);
+                const catQuizIds = catQuizzes.map(q => q.id);
+                const catAtts = this.attempts.filter(a => catQuizIds.includes(a.quiz_id) && a.status !== 'IN_PROGRESS');
+                const avg = catAtts.length > 0 ? Number((catAtts.reduce((s, a) => s + Number(a.percentage || 0), 0) / catAtts.length).toFixed(2)) : 0;
+                return {
+                    name: cat.name,
+                    attempts_count: catAtts.length,
+                    avg_score: avg
+                };
+            });
+            rows.sort((a, b) => b.attempts_count - a.attempts_count);
+            return { rows };
+        }
+
+        // ACTIVE STUDENTS WITH ATTEMPTS (COUNT DISTINCT)
+        if (upper.includes('COUNT(DISTINCT') || (upper.includes('FROM ATTEMPTS A') && upper.includes('JOIN USERS U'))) {
+            const activeUserIds = new Set(this.attempts.filter(a => a.status !== 'IN_PROGRESS').map(a => a.user_id));
+            return { rows: [{ count: activeUserIds.size }] };
+        }
+
         // USERS queries
         if (upper.includes('FROM USERS')) {
+            if (upper.includes('COUNT(*)') && !upper.includes('TOTAL_TAKEN')) {
+                const students = this.users.filter(u => u.role === 'STUDENT');
+                return { rows: [{ count: students.length }] };
+            }
             if (upper.includes('TOTAL_TAKEN') || upper.includes('AVG_SCORE')) {
                 const students = this.users.filter(u => u.role === 'STUDENT');
-                const rows = students.map(u => {
+                const rows = [];
+                for (const u of students) {
                     const userAtts = this.attempts.filter(a => String(a.user_id) === String(u.id) && a.status !== 'IN_PROGRESS');
-                    const avg = userAtts.length > 0 ? Number((userAtts.reduce((sum, a) => sum + Number(a.percentage || 0), 0) / userAtts.length).toFixed(1)) : 0;
-                    const max = userAtts.length > 0 ? Number((Math.max(...userAtts.map(a => Number(a.percentage || 0)))).toFixed(1)) : 0;
-                    return {
-                        id: u.id,
-                        student_name: u.name,
-                        total_taken: userAtts.length,
-                        avg_score: avg,
-                        highest_score: max
-                    };
-                });
+                    if (userAtts.length > 0) {
+                        const avg = Number((userAtts.reduce((sum, a) => sum + Number(a.percentage || 0), 0) / userAtts.length).toFixed(1));
+                        const max = Number((Math.max(...userAtts.map(a => Number(a.percentage || 0)))).toFixed(1));
+                        rows.push({
+                            id: u.id,
+                            student_name: u.name,
+                            total_taken: userAtts.length,
+                            avg_score: avg,
+                            highest_score: max
+                        });
+                    }
+                }
                 // Sort by avg_score DESC, total_taken DESC
                 rows.sort((a, b) => b.avg_score - a.avg_score || b.total_taken - a.total_taken);
                 return { rows: rows.slice(0, 10) };
@@ -310,6 +361,9 @@ class InMemoryDB {
 
         // QUIZZES queries
         if (upper.includes('FROM QUIZZES')) {
+            if (upper.includes('COUNT(*)')) {
+                return { rows: [{ count: this.quizzes.length }] };
+            }
             if (upper.includes('WHERE ID = $1') || upper.includes('WHERE Q.ID = $1')) {
                 const quiz = this.quizzes.find(q => q.id === Number(params[0]));
                 // If query includes status filter (AND status = $2), check it
@@ -326,7 +380,7 @@ class InMemoryDB {
             return { rows: list.map(q => ({
                 ...q,
                 category_name: this.categories.find(c => c.id === q.category_id)?.name || 'General',
-                total_questions: this.questions.filter(qu => qu.quiz_id === q.id).length || 5
+                total_questions: this.questions.filter(qu => qu.quiz_id === q.id).length || 20
             })) };
         }
 
@@ -415,6 +469,18 @@ class InMemoryDB {
 
         // ATTEMPTS queries & LEADERBOARD
         if (upper.includes('FROM ATTEMPTS')) {
+            // Overall attempts stats for admin analytics
+            if (upper.includes('AVG(PERCENTAGE)') || upper.includes('TOTAL_ATTEMPTS')) {
+                const completed = this.attempts.filter(a => a.status !== 'IN_PROGRESS');
+                const avg = completed.length > 0 ? Number((completed.reduce((s, a) => s + Number(a.percentage || 0), 0) / completed.length).toFixed(2)) : 0;
+                return { rows: [{ total_attempts: completed.length, avg_score: avg }] };
+            }
+            if (upper.includes("STATUS = 'PASSED'") && upper.includes('COUNT(*)')) {
+                return { rows: [{ count: this.attempts.filter(a => a.status === 'PASSED').length }] };
+            }
+            if (upper.includes("STATUS IN ('FAILED', 'TIMED_OUT')") || (upper.includes('FAILED') && upper.includes('COUNT(*)'))) {
+                return { rows: [{ count: this.attempts.filter(a => a.status === 'FAILED' || a.status === 'TIMED_OUT').length }] };
+            }
             // COUNT(*) with user_id + quiz_id + status filters
             if (upper.includes('COUNT(*)')) {
                 let filtered = [...this.attempts];

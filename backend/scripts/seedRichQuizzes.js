@@ -954,7 +954,7 @@ const SEED_DATA = [
             description: "Verify your proficiency in modern single page React applications, state handlers, hooks, and Virtual DOM reconciliations.",
             difficulty: "INTERMEDIATE",
             duration_minutes: 15,
-            passing_score: 70,
+            passing_score: 75,
             max_attempts: 1,
             negative_marks: 0.25,
             status: "PUBLISHED"
@@ -963,7 +963,7 @@ const SEED_DATA = [
             {
                 question_text: "Which React hook is used to perform side effects in functional components?",
                 marks: 5,
-                explanation: "useEffect runs side effects after render.",
+                explanation: "useEffect runs side effects after the component renders.",
                 options: [
                     { option_text: "useEffect", is_correct: true },
                     { option_text: "useState", is_correct: false },
@@ -974,12 +974,100 @@ const SEED_DATA = [
             {
                 question_text: "What is the virtual DOM in React?",
                 marks: 5,
-                explanation: "Virtual DOM syncs with the real DOM via reconciliation.",
+                explanation: "The virtual DOM is an in-memory representation of real DOM elements synced through reconciliation.",
                 options: [
                     { option_text: "A lightweight representation of the real DOM in memory", is_correct: true },
                     { option_text: "A direct connection to the browser document", is_correct: false },
                     { option_text: "A database store running inside index.js", is_correct: false },
-                    { option_text: "An styling engine replacing CSS files", is_correct: false }
+                    { option_text: "A styling engine replacing CSS files", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the purpose of the 'key' prop when rendering lists in React?",
+                marks: 5,
+                explanation: "Keys help React identify which items have changed, been added, or been removed during diffing.",
+                options: [
+                    { option_text: "Helps React identify which items have changed, added, or removed", is_correct: true },
+                    { option_text: "Styles list items uniquely with CSS", is_correct: false },
+                    { option_text: "Binds event listeners to child elements", is_correct: false },
+                    { option_text: "Encrypts state transfers between components", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which hook would you use to memoize a computationally expensive calculated value?",
+                marks: 5,
+                explanation: "useMemo caches the result of a calculation between re-renders.",
+                options: [
+                    { option_text: "useMemo", is_correct: true },
+                    { option_text: "useCallback", is_correct: false },
+                    { option_text: "useRef", is_correct: false },
+                    { option_text: "useEffect", is_correct: false }
+                ]
+            },
+            {
+                question_text: "How do you pass data from a parent component to a child component in standard React?",
+                marks: 5,
+                explanation: "Props are the standard unidirectional mechanism for passing data from parent to child.",
+                options: [
+                    { option_text: "Props", is_correct: true },
+                    { option_text: "Local state", is_correct: false },
+                    { option_text: "Redux dispatch only", is_correct: false },
+                    { option_text: "HTTP Headers", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What does JSX stand for in React?",
+                marks: 5,
+                explanation: "JSX stands for JavaScript XML, allowing HTML-like syntax inside JavaScript.",
+                options: [
+                    { option_text: "JavaScript XML", is_correct: true },
+                    { option_text: "Java Syntax Extension", is_correct: false },
+                    { option_text: "JSON Style Syntax", is_correct: false },
+                    { option_text: "JavaScript X-Path", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the purpose of the React useCallback hook?",
+                marks: 5,
+                explanation: "useCallback returns a memoized version of the callback function that only changes if dependencies change.",
+                options: [
+                    { option_text: "Returns a memoized version of a callback function", is_correct: true },
+                    { option_text: "Triggers immediate re-renders of the component tree", is_correct: false },
+                    { option_text: "Registers service workers in the background", is_correct: false },
+                    { option_text: "Cancels fetch requests on component unmount", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which hook provides direct access to a DOM element or persists mutable values across renders without causing re-renders?",
+                marks: 5,
+                explanation: "useRef returns a mutable ref object whose .current property persists without triggering re-renders.",
+                options: [
+                    { option_text: "useRef", is_correct: true },
+                    { option_text: "useState", is_correct: false },
+                    { option_text: "useLayoutEffect", is_correct: false },
+                    { option_text: "useImperativeHandle", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What happens when you call a state updater function (e.g. setCount) in React?",
+                marks: 5,
+                explanation: "It schedules a state update and triggers a reconciliation re-render cycle.",
+                options: [
+                    { option_text: "Schedules an update to component state and triggers a re-render", is_correct: true },
+                    { option_text: "Immediately reloads the browser window", is_correct: false },
+                    { option_text: "Recompiles the build bundle", is_correct: false },
+                    { option_text: "Deletes cached props permanently", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is Prop Drilling in React applications?",
+                marks: 5,
+                explanation: "Prop drilling is the process of passing props down through multiple layers of components that do not need them directly.",
+                options: [
+                    { option_text: "Passing props down through multiple layers of intermediate components", is_correct: true },
+                    { option_text: "Drilling database columns into API handlers", is_correct: false },
+                    { option_text: "Validating types in TypeScript interfaces", is_correct: false },
+                    { option_text: "A code bundling and minification optimization", is_correct: false }
                 ]
             }
         ]
@@ -1001,7 +1089,7 @@ const SEED_DATA = [
             {
                 question_text: "What is the average time complexity of searching a value in a binary search tree?",
                 marks: 5,
-                explanation: "Each step cuts search space in half.",
+                explanation: "Each step cuts the remaining search space in half, giving O(log n) average time.",
                 options: [
                     { option_text: "O(log n)", is_correct: true },
                     { option_text: "O(n)", is_correct: false },
@@ -1012,12 +1100,100 @@ const SEED_DATA = [
             {
                 question_text: "Which data structure operates on a Last-In, First-Out (LIFO) model?",
                 marks: 5,
-                explanation: "Stacks push/pop from the top.",
+                explanation: "Stacks push and pop elements from the top, following LIFO.",
                 options: [
                     { option_text: "Stack", is_correct: true },
                     { option_text: "Queue", is_correct: false },
                     { option_text: "Linked List", is_correct: false },
                     { option_text: "Graph", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the worst-case time complexity of QuickSort?",
+                marks: 5,
+                explanation: "When pivot choices result in unbalanced partitions (e.g. already sorted array), QuickSort degrades to O(n²).",
+                options: [
+                    { option_text: "O(n²)", is_correct: true },
+                    { option_text: "O(n log n)", is_correct: false },
+                    { option_text: "O(n)", is_correct: false },
+                    { option_text: "O(1)", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which data structure uses a First-In, First-Out (FIFO) ordering?",
+                marks: 5,
+                explanation: "Queues process items in the order they arrive (FIFO).",
+                options: [
+                    { option_text: "Queue", is_correct: true },
+                    { option_text: "Stack", is_correct: false },
+                    { option_text: "Binary Heap", is_correct: false },
+                    { option_text: "Trie", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the time complexity to access an element by index in a contiguous array?",
+                marks: 5,
+                explanation: "Array elements are stored at contiguous memory offsets, allowing instant O(1) index access.",
+                options: [
+                    { option_text: "O(1)", is_correct: true },
+                    { option_text: "O(n)", is_correct: false },
+                    { option_text: "O(log n)", is_correct: false },
+                    { option_text: "O(n²)", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which algorithm is commonly used to find the shortest path in a weighted graph with non-negative edge weights?",
+                marks: 5,
+                explanation: "Dijkstra's algorithm finds the shortest path between nodes in a graph with non-negative edge weights.",
+                options: [
+                    { option_text: "Dijkstra's Algorithm", is_correct: true },
+                    { option_text: "Kruskal's Algorithm", is_correct: false },
+                    { option_text: "Depth First Search", is_correct: false },
+                    { option_text: "Bubble Sort", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What type of data structure consists of nodes where each node contains data and a pointer to the next node?",
+                marks: 5,
+                explanation: "A singly linked list chains sequential nodes containing data and a 'next' reference pointer.",
+                options: [
+                    { option_text: "Singly Linked List", is_correct: true },
+                    { option_text: "Array", is_correct: false },
+                    { option_text: "Hash Map", is_correct: false },
+                    { option_text: "B-Tree", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the average time complexity of inserting a key-value pair into a Hash Table?",
+                marks: 5,
+                explanation: "With a good hash function, hash tables achieve O(1) constant average insertion and lookup time.",
+                options: [
+                    { option_text: "O(1)", is_correct: true },
+                    { option_text: "O(n)", is_correct: false },
+                    { option_text: "O(log n)", is_correct: false },
+                    { option_text: "O(n!)", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which sorting algorithm has a guaranteed worst-case time complexity of O(n log n)?",
+                marks: 5,
+                explanation: "Merge Sort consistently divides arrays into halves and merges them in O(n log n) time in all cases.",
+                options: [
+                    { option_text: "Merge Sort", is_correct: true },
+                    { option_text: "Bubble Sort", is_correct: false },
+                    { option_text: "Insertion Sort", is_correct: false },
+                    { option_text: "Selection Sort", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is a cycle in graph theory?",
+                marks: 5,
+                explanation: "A cycle is a non-empty path of vertices and edges that begins and ends at the exact same vertex.",
+                options: [
+                    { option_text: "A path of edges that starts and ends at the same vertex", is_correct: true },
+                    { option_text: "A graph containing zero vertices", is_correct: false },
+                    { option_text: "A binary tree with balanced heights", is_correct: false },
+                    { option_text: "A disjoint set of components", is_correct: false }
                 ]
             }
         ]
@@ -1030,7 +1206,7 @@ const SEED_DATA = [
             description: "Accredit your knowledge in Amazon Web Services (AWS) deployment environments, scalable compute nodes, and object stores.",
             difficulty: "INTERMEDIATE",
             duration_minutes: 20,
-            passing_score: 70,
+            passing_score: 75,
             max_attempts: 1,
             negative_marks: 0.50,
             status: "PUBLISHED"
@@ -1050,12 +1226,100 @@ const SEED_DATA = [
             {
                 question_text: "What is the primary usage of Amazon S3?",
                 marks: 5,
-                explanation: "S3 stands for Simple Storage Service.",
+                explanation: "S3 stands for Simple Storage Service, offering scalable object storage.",
                 options: [
                     { option_text: "Object storage service for data and assets", is_correct: true },
                     { option_text: "Relational database hosting", is_correct: false },
                     { option_text: "DNS routing domain manager", is_correct: false },
                     { option_text: "Direct virtual machine instances", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which AWS service is a serverless, event-driven compute engine?",
+                marks: 5,
+                explanation: "AWS Lambda executes backend code in response to triggers without server provisioning.",
+                options: [
+                    { option_text: "AWS Lambda", is_correct: true },
+                    { option_text: "Amazon EC2", is_correct: false },
+                    { option_text: "Amazon ECS", is_correct: false },
+                    { option_text: "Amazon Lightsail", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is Amazon RDS primarily used for?",
+                marks: 5,
+                explanation: "Amazon Relational Database Service (RDS) makes it easy to set up, operate, and scale relational databases in the cloud.",
+                options: [
+                    { option_text: "Managed Relational Database Service (Postgres, MySQL, Oracle)", is_correct: true },
+                    { option_text: "Domain Name System registrar", is_correct: false },
+                    { option_text: "Content Delivery Network caching", is_correct: false },
+                    { option_text: "DDoS traffic mitigation", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the primary function of Amazon CloudFront?",
+                marks: 5,
+                explanation: "CloudFront is AWS's global Content Delivery Network (CDN) that delivers data and APIs with low latency.",
+                options: [
+                    { option_text: "Global Content Delivery Network (CDN)", is_correct: true },
+                    { option_text: "Relational Database Engine", is_correct: false },
+                    { option_text: "Virtual Private Cloud Firewall", is_correct: false },
+                    { option_text: "Docker Container Registry", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which AWS service provides scalable DNS routing and domain registration?",
+                marks: 5,
+                explanation: "Amazon Route 53 is a highly available and scalable cloud Domain Name System (DNS) web service.",
+                options: [
+                    { option_text: "Amazon Route 53", is_correct: true },
+                    { option_text: "Amazon CloudFront", is_correct: false },
+                    { option_text: "Amazon VPC", is_correct: false },
+                    { option_text: "AWS API Gateway", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What does IAM stand for in cloud security architectures?",
+                marks: 5,
+                explanation: "IAM stands for Identity and Access Management, controlling user access and resource permissions.",
+                options: [
+                    { option_text: "Identity and Access Management", is_correct: true },
+                    { option_text: "Internet Access Monitoring", is_correct: false },
+                    { option_text: "Instance Allocation Module", is_correct: false },
+                    { option_text: "Integrated Application Matrix", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is an Amazon VPC?",
+                marks: 5,
+                explanation: "Amazon Virtual Private Cloud (VPC) provides a logically isolated virtual network to launch AWS resources.",
+                options: [
+                    { option_text: "Virtual Private Cloud - an isolated virtual network", is_correct: true },
+                    { option_text: "Variable Processing Cluster", is_correct: false },
+                    { option_text: "Verified Public Connection", is_correct: false },
+                    { option_text: "Vector Pipeline Controller", is_correct: false }
+                ]
+            },
+            {
+                question_text: "Which AWS storage service provides scalable shared file storage for Amazon EC2 instances?",
+                marks: 5,
+                explanation: "Amazon EFS provides a simple, serverless, set-and-forget elastic file system for Linux workloads.",
+                options: [
+                    { option_text: "Amazon EFS (Elastic File System)", is_correct: true },
+                    { option_text: "Amazon EBS (Elastic Block Store)", is_correct: false },
+                    { option_text: "Amazon S3 Glacier", is_correct: false },
+                    { option_text: "AWS Snowball", is_correct: false }
+                ]
+            },
+            {
+                question_text: "What is the purpose of Auto Scaling in AWS?",
+                marks: 5,
+                explanation: "Auto Scaling monitors applications and automatically adjusts capacity to maintain steady, predictable performance at the lowest possible cost.",
+                options: [
+                    { option_text: "Automatically adjusts compute capacity based on demand", is_correct: true },
+                    { option_text: "Encrypts data buckets at rest automatically", is_correct: false },
+                    { option_text: "Monitors monthly billing budgets", is_correct: false },
+                    { option_text: "Manages DNS record propagation across regions", is_correct: false }
                 ]
             }
         ]
@@ -1107,18 +1371,7 @@ async function seedRichQuizzes() {
                 console.log(`✅ Quiz Created: ${data.quiz.title}`);
 
                 // 3. Seed Questions & Options
-                const targetCount = 20;
-                let questionsToSeed = [...data.questions];
-                // Replicate questions dynamically to reach 20 if less
-                while (questionsToSeed.length < targetCount && data.questions.length > 0) {
-                    const qTemplate = data.questions[questionsToSeed.length % data.questions.length];
-                    questionsToSeed.push({
-                        ...qTemplate,
-                        question_text: `${qTemplate.question_text} (Variant ${Math.floor(questionsToSeed.length / data.questions.length) + 1})`
-                    });
-                }
-
-                for (const q of questionsToSeed) {
+                for (const q of data.questions) {
                     const insertQ = await db.query(
                         `INSERT INTO questions (quiz_id, question_text, marks, explanation) 
                          VALUES ($1, $2, $3, $4) 
@@ -1135,7 +1388,7 @@ async function seedRichQuizzes() {
                         );
                     }
                 }
-                console.log(`🎉 Seeded exactly 20 questions for quiz: ${data.quiz.title}`);
+                console.log(`🎉 Seeded ${data.questions.length} unique questions for quiz: ${data.quiz.title}`);
             } else {
                 console.log(`ℹ️ Quiz already exists, skipping: ${data.quiz.title}`);
             }

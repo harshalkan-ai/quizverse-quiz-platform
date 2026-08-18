@@ -65,9 +65,9 @@ const QuizResult = () => {
     }
 
     const { attempt, questions } = result;
-    const passingScore = Number(attempt?.passing_score) || 70;
+    const passingScore = Number(attempt?.passing_score) || 75;
     const percentage = Number(attempt?.percentage) || 0;
-    const isPassed = attempt?.status === 'PASSED' || Number(attempt?.percentage || 0) >= Number(attempt?.passing_score || 70);
+    const isPassed = attempt?.status === 'PASSED' || Number(attempt?.percentage || 0) >= 75;
 
     const statusColor = isPassed ? 'text-emerald-400' : 'text-rose-400';
     const statusBg = isPassed ? 'bg-emerald-500/10' : 'bg-rose-500/10';
