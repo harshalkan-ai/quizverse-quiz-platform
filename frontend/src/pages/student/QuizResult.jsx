@@ -62,7 +62,7 @@ const QuizResult = () => {
     const { attempt, questions } = result;
     const passingScore = Number(attempt?.passing_score) || 70;
     const percentage = Number(attempt?.percentage) || 0;
-    const isPassed = attempt?.status === 'PASSED' || attempt?.passed === true || percentage >= passingScore;
+    const isPassed = attempt?.status === 'PASSED';
 
     const statusColor = isPassed ? 'text-emerald-400' : 'text-rose-400';
     const statusBg = isPassed ? 'bg-emerald-500/10' : 'bg-rose-500/10';
@@ -207,37 +207,39 @@ const QuizResult = () => {
 
                                 <div className="space-y-2.5 mb-5 ml-0 md:ml-12">
                                     {(q?.options || [])?.map(opt => {
-                                        const isSelectedHere = opt?.id === selectedOptionId;
-                                        const isCorrectHere = opt?.is_correct;
-                                        
-                                        let optClass = "border-slate-800 bg-slate-800/30 text-slate-400";
-                                        let icon = <Circle className="w-4 h-4 text-slate-600 shrink-0" />;
+                                        const isSelectedHere = String(opt?.id) === String(selectedOptionId);
+                                        const isCorrectHere  = opt?.is_correct;
+
+                                        // ── Determine styling based on correctness + selection ──
+                                        let optClass, icon, badge;
 
                                         if (isCorrectHere && isSelectedHere) {
-                                            optClass = "border-emerald-500/60 bg-emerald-500/15 text-emerald-300 font-medium shadow-sm";
-                                            icon = <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />;
-                                        } else if (isCorrectHere && !isSelectedHere) {
-                                            optClass = "border-emerald-500/40 bg-emerald-500/10 text-emerald-400";
-                                            icon = <CheckCircle className="w-5 h-5 text-emerald-400/80 shrink-0" />;
+                                            // ✅ User chose the right answer → full green
+                                            optClass = 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300 font-semibold shadow-sm';
+                                            icon     = <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />;
+                                            badge    = <span className="ml-auto text-[11px] font-black tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 whitespace-nowrap">Your Answer (Correct) ✓</span>;
                                         } else if (!isCorrectHere && isSelectedHere) {
-                                            optClass = "border-rose-500/60 bg-rose-500/15 text-rose-300 font-medium";
-                                            icon = <XCircle className="w-5 h-5 text-rose-400 shrink-0" />;
+                                            // ❌ User chose the wrong answer → full red
+                                            optClass = 'border-red-500/40 bg-red-500/20 text-red-300 font-semibold shadow-sm';
+                                            icon     = <XCircle className="w-5 h-5 text-red-400 shrink-0" />;
+                                            badge    = <span className="ml-auto text-[11px] font-black tracking-wider px-2.5 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 whitespace-nowrap">Your Answer (Incorrect) ✗</span>;
+                                        } else if (isCorrectHere && !isSelectedHere) {
+                                            // ℹ️ This was the right answer but user didn't pick it → green outline
+                                            optClass = 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400';
+                                            icon     = <CheckCircle className="w-5 h-5 text-emerald-400/80 shrink-0" />;
+                                            badge    = <span className="ml-auto text-[11px] font-black tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-700 text-emerald-400 whitespace-nowrap">Correct Answer ✓</span>;
+                                        } else {
+                                            // Unselected, incorrect → muted slate
+                                            optClass = 'border-slate-800 bg-slate-800/30 text-slate-400';
+                                            icon     = <Circle className="w-4 h-4 text-slate-600 shrink-0" />;
+                                            badge    = null;
                                         }
 
                                         return (
                                             <div key={opt?.id} className={`p-3.5 rounded-xl border-2 flex items-center gap-3 transition-all ${optClass}`}>
                                                 {icon}
-                                                <span className="text-sm">{opt?.option_text}</span>
-                                                {isSelectedHere && (
-                                                    <span className="ml-auto text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-slate-300">
-                                                        Your Choice
-                                                    </span>
-                                                )}
-                                                {isCorrectHere && !isSelectedHere && (
-                                                    <span className="ml-auto text-[11px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-700 text-emerald-400">
-                                                        Correct Answer
-                                                    </span>
-                                                )}
+                                                <span className="text-sm flex-1">{opt?.option_text}</span>
+                                                {badge}
                                             </div>
                                         );
                                     })}

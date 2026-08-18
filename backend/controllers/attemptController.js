@@ -77,12 +77,20 @@ async function submitAttempt(req, res) {
         const quizRes = await db.query('SELECT * FROM quizzes WHERE id = $1', [attempt.quiz_id]);
         const quiz = quizRes.rows[0] || {};
 
-        // Calculate score
-        let score = 0;
-        let totalMarks = 0;
-        let correct_answers = 0;
-        let incorrect_answers = 0;
-        let unanswered = 0;
+        // ── Build a String-keyed Map to safely handle UUID vs numeric IDs ──
+        const submittedAnswersMap = new Map();
+        (answers || []).forEach(a => {
+            const qId   = String(a.question_id  || a.questionId  || '');
+            const optId = String(a.selected_option_id || a.selectedOptionId || '');
+            if (qId && optId) submittedAnswersMap.set(qId, optId);
+        });
+
+        // ── Scoring variables ──
+        let obtainedMarks         = 0;
+        let totalMarks            = 0;
+        let correctAnswersCount   = 0;
+        let incorrectAnswersCount = 0;
+        let unansweredCount       = 0;
 
         const qRes = await db.query('SELECT * FROM questions WHERE quiz_id = $1', [attempt.quiz_id]);
         const questions = qRes.rows;
@@ -91,37 +99,45 @@ async function submitAttempt(req, res) {
         const answersToInsert = [];
 
         for (const q of questions) {
-            const qMarks = Number(q.marks) || 5;
-            totalMarks += qMarks;
-            const userAns = answers.find(a => Number(a.question_id) === Number(q.id));
-            
-            if (!userAns || !userAns.selected_option_id) {
-                unanswered++;
+            const qMarks    = Number(q.marks) || 5;
+            totalMarks     += qMarks;
+
+            const qIdStr    = String(q.id);
+            const userOptStr = submittedAnswersMap.get(qIdStr);
+
+            // Get the correct option for this question
+            const correctOptRes = await db.query(
+                'SELECT id FROM options WHERE question_id = $1 AND is_correct = true LIMIT 1',
+                [q.id]
+            );
+            const correctOptStr = correctOptRes.rows.length > 0
+                ? String(correctOptRes.rows[0].id)
+                : null;
+
+            if (!userOptStr) {
+                unansweredCount++;
                 answersToInsert.push({ qId: q.id, optId: null, is_correct: false });
+            } else if (correctOptStr && userOptStr === correctOptStr) {
+                obtainedMarks += qMarks;
+                correctAnswersCount++;
+                answersToInsert.push({ qId: q.id, optId: userOptStr, is_correct: true });
             } else {
-                const optRes = await db.query('SELECT is_correct FROM options WHERE id = $1', [userAns.selected_option_id]);
-                if (optRes.rows.length > 0 && optRes.rows[0].is_correct) {
-                    correct_answers++;
-                    score += qMarks;
-                    answersToInsert.push({ qId: q.id, optId: userAns.selected_option_id, is_correct: true });
-                } else {
-                    incorrect_answers++;
-                    const negMark = Number(quiz.negative_marks || 0);
-                    score -= negMark; // Apply negative marking
-                    answersToInsert.push({ qId: q.id, optId: userAns.selected_option_id, is_correct: false });
-                }
+                incorrectAnswersCount++;
+                obtainedMarks -= Number(quiz.negative_marks || 0);
+                answersToInsert.push({ qId: q.id, optId: userOptStr, is_correct: false });
             }
         }
 
-        const negativeDeductions = incorrect_answers * Number(quiz.negative_marks || 0);
-        score = Math.max(0, Number(score.toFixed(2))); // Clamp score at 0
-        const percentage = totalMarks > 0 ? Number(((score / totalMarks) * 100).toFixed(2)) : 0;
+        const negativeDeductions = incorrectAnswersCount * Number(quiz.negative_marks || 0);
+        const clampedScore = Math.max(0, obtainedMarks);
+        const score        = Number(clampedScore.toFixed(2));
+        const percentage   = totalMarks > 0
+            ? Number(((clampedScore / totalMarks) * 100).toFixed(2))
+            : 0;
         const passingScore = Number(quiz.passing_score) || 70;
-        
-        // Exact TASK 1 rule: When percentage >= quiz.passing_score, set status = 'PASSED', else 'FAILED'
-        const finalStatus = percentage >= passingScore ? 'PASSED' : 'FAILED';
+        const finalStatus  = percentage >= passingScore ? 'PASSED' : 'FAILED';
 
-        const startTime = attempt.started_at ? new Date(attempt.started_at) : new Date();
+        const startTime        = attempt.started_at ? new Date(attempt.started_at) : new Date();
         const timeTakenSeconds = Math.max(0, Math.floor((new Date() - startTime) / 1000));
 
         // Update Attempt in Database
@@ -131,7 +147,7 @@ async function submitAttempt(req, res) {
                 unanswered = $5, time_taken_seconds = $6, status = $7, completed_at = CURRENT_TIMESTAMP,
                 negative_deductions = $8
             WHERE id = $9
-        `, [score, percentage, correct_answers, incorrect_answers, unanswered, timeTakenSeconds, finalStatus, negativeDeductions, attempt_id]);
+        `, [score, percentage, correctAnswersCount, incorrectAnswersCount, unansweredCount, timeTakenSeconds, finalStatus, negativeDeductions, attempt_id]);
 
         // Insert Answers
         for (const ans of answersToInsert) {
@@ -148,11 +164,11 @@ async function submitAttempt(req, res) {
             score,
             percentage,
             passing_score: passingScore,
-            correct_answers,
-            incorrect_answers,
-            unanswered,
+            correct_answers:     correctAnswersCount,
+            incorrect_answers:   incorrectAnswersCount,
+            unanswered:          unansweredCount,
             negative_deductions: negativeDeductions,
-            time_taken_seconds: timeTakenSeconds,
+            time_taken_seconds:  timeTakenSeconds,
             status: finalStatus,
             passed: finalStatus === 'PASSED',
             completed_at: new Date()
