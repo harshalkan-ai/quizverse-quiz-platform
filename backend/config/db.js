@@ -568,9 +568,13 @@ class InMemoryDB {
             return { rows: [attempt || { id: attemptId, status: params[6] || 'PASSED' }] };
         }
 
-        // ANSWERS queries
         if (upper.startsWith('INSERT INTO ANSWERS')) {
-            this.answers.push({ attempt_id: params[0], question_id: params[1], selected_option_id: params[2], is_correct: params[3] });
+            this.answers.push({
+                attempt_id: String(params[0]),
+                question_id: String(params[1]),
+                selected_option_id: params[2] !== null && params[2] !== undefined ? String(params[2]) : null,
+                is_correct: params[3] === true || params[3] === 'true'
+            });
             return { rows: [] };
         }
         if (upper.includes('FROM ANSWERS')) {

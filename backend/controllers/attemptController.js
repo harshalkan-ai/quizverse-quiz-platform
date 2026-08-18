@@ -117,7 +117,7 @@ async function submitAttempt(req, res) {
             if (!userOptStr) {
                 unansweredCount++;
                 answersToInsert.push({ qId: q.id, optId: null, is_correct: false });
-            } else if (correctOptStr && userOptStr === correctOptStr) {
+            } else if (correctOptStr && String(userOptStr) === String(correctOptStr)) {
                 obtainedMarks += qMarks;
                 correctAnswersCount++;
                 answersToInsert.push({ qId: q.id, optId: userOptStr, is_correct: true });
@@ -134,8 +134,8 @@ async function submitAttempt(req, res) {
         const percentage   = totalMarks > 0
             ? Number(((clampedScore / totalMarks) * 100).toFixed(2))
             : 0;
-        attempt.passing_score = attempt.passing_score || quiz.passing_score || 70;
-        const isPassed = percentage >= Number(attempt.passing_score || 70);
+        attempt.passing_score = Number(attempt.passing_score || quiz.passing_score || 70);
+        const isPassed = percentage >= Number(attempt.passing_score);
         const finalStatus = isPassed ? 'PASSED' : 'FAILED';
 
         const startTime        = attempt.started_at ? new Date(attempt.started_at) : new Date();

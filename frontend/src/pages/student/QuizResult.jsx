@@ -187,8 +187,8 @@ const QuizResult = () => {
 
                     {(questions || [])?.map((q, idx) => {
                         const selectedOptionId = q?.user_selected_option_id || q?.user_answer?.selected_option_id;
-                        const userSelected = (q?.options || [])?.find(o => o?.id === selectedOptionId);
-                        const isQCorrect = userSelected && userSelected?.is_correct;
+                        const userSelected = (q?.options || [])?.find(o => String(o?.id) === String(selectedOptionId));
+                        const isQCorrect = userSelected ? (userSelected?.is_correct === true || userSelected?.is_correct === 'true') : (q?.user_answer?.is_correct === true);
                         const isUnanswered = !selectedOptionId;
 
                         return (
