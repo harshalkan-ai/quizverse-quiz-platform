@@ -17,7 +17,26 @@ const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
-app.use(cors());
+// Explicit CORS: allow Vercel production frontend + localhost dev
+// Do NOT use wildcard '*' — cookies/auth headers require explicit origins
+const allowedOrigins = [
+    'https://quizverse-quiz-platform-beo2.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    /\.vercel\.app$/  // also covers preview deployment URLs
+];
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, Postman, Render health checks)
+        if (!origin) return callback(null, true);
+        const allowed = allowedOrigins.some(o =>
+            typeof o === 'string' ? o === origin : o.test(origin)
+        );
+        if (allowed) return callback(null, true);
+        return callback(new Error(`CORS: Origin '${origin}' not allowed`));
+    },
+    credentials: true
+}));
 app.use(express.json());
 
 // API Routes Mounted
@@ -128,8 +147,9 @@ if (require.main === module) {
     
     // CRITICAL: Bind immediately so Express is ALWAYS online.
     // DB init runs async in background — a slow/failing DB must NEVER block the server from starting.
-    const server = app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
+    // Bind on 0.0.0.0 so Render (and other cloud hosts) can reach the process.
+    const server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on port ${PORT}`);
     });
 
     server.on('error', (err) => {

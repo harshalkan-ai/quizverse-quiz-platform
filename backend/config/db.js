@@ -596,6 +596,9 @@ inMemory.initHashes();
 let pool = null;
 let useInMemory = false;
 
+// Detect production: Render sets the RENDER env var, or NODE_ENV=production
+const isProduction = !!(process.env.RENDER || process.env.NODE_ENV === 'production');
+
 try {
     if (process.env.DATABASE_URL) {
         pool = new Pool({
@@ -613,6 +616,9 @@ try {
             console.error('Database pool background error:', err.message);
         });
     } else {
+        if (isProduction) {
+            console.error('❌ FATAL: DATABASE_URL is not set in production environment!');
+        }
         useInMemory = true;
     }
 } catch (err) {
@@ -626,9 +632,14 @@ module.exports = {
             try {
                 return await pool.query(text, params);
             } catch (err) {
+                if (isProduction) {
+                    // In production, NEVER silently fall back to in-memory.
+                    // A fake 0-score from in-memory is worse than a clean 500 error.
+                    console.error(`❌ PostgreSQL query failed in production: ${err.message}`);
+                    throw err; // Let the controller return a real 500 to the client
+                }
+                // In local dev, fall back gracefully for convenience
                 console.warn(`⚠️ PostgreSQL query failed (${err.code || err.message}). Using local fallback storage for this request.`);
-                // Do NOT set useInMemory=true globally — only fall back for this single request
-                // so subsequent requests still try Postgres
                 return await inMemory.query(text, params);
             }
         }
@@ -636,4 +647,4 @@ module.exports = {
     },
     pool: () => pool,
     inMemoryStore: inMemory
-};
+};
