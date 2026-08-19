@@ -16,7 +16,7 @@ async function register(req, res) {
             }
         }
         
-        const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const userExists = await db.query('SELECT id FROM users WHERE email = $1', [email]);
         if (userExists.rows.length > 0) {
             return res.status(400).json({ status: 'FAIL', message: 'User already exists.' });
         }
@@ -43,7 +43,7 @@ async function register(req, res) {
         });
     } catch (error) {
         console.error('REGISTER ERROR:', error);
-        return res.status(500).json({ status: 'ERROR', message: 'Server error during registration.' });
+        return res.status(500).json({ status: 'ERROR', message: error.message });
     }
 }
 
@@ -82,7 +82,7 @@ async function login(req, res) {
         });
     } catch (error) {
         console.error('LOGIN ERROR:', error);
-        return res.status(500).json({ status: 'ERROR', message: 'Server error during login.' });
+        return res.status(500).json({ status: 'ERROR', message: error.message });
     }
 }
 
@@ -104,7 +104,7 @@ async function getMe(req, res) {
         });
     } catch (error) {
         console.error('GET ME ERROR:', error);
-        return res.status(500).json({ status: 'ERROR', message: 'Server error.' });
+        return res.status(500).json({ status: 'ERROR', message: error.message });
     }
 }
 

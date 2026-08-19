@@ -601,19 +601,22 @@ try {
         pool = new Pool({
             connectionString: process.env.DATABASE_URL,
             ssl: { rejectUnauthorized: false },
-            connectionTimeoutMillis: 3000,
-            max: 5,
-            idleTimeoutMillis: 5000
+            connectionTimeoutMillis: 8000,
+            max: 10,
+            idleTimeoutMillis: 30000,
+            allowExitOnIdle: false
         });
 
+        // Gracefully log background pool errors — do NOT permanently switch to in-memory
+        // A transient disconnect should not lock the server out of Postgres forever
         pool.on('error', (err) => {
-            console.warn('⚠️ Remote PostgreSQL connection error. Seamlessly serving via zero-latency local fallback data engine:', err.message);
-            useInMemory = true;
+            console.error('Database pool background error:', err.message);
         });
     } else {
         useInMemory = true;
     }
 } catch (err) {
+    console.error('Failed to create DB pool:', err.message);
     useInMemory = true;
 }
 
@@ -623,12 +626,14 @@ module.exports = {
             try {
                 return await pool.query(text, params);
             } catch (err) {
-                console.warn(`⚠️ PostgreSQL query failed (${err.code || err.message}). Gracefully using local fallback storage.`);
-                useInMemory = true;
+                console.warn(`⚠️ PostgreSQL query failed (${err.code || err.message}). Using local fallback storage for this request.`);
+                // Do NOT set useInMemory=true globally — only fall back for this single request
+                // so subsequent requests still try Postgres
                 return await inMemory.query(text, params);
             }
         }
         return await inMemory.query(text, params);
     },
+    pool: () => pool,
     inMemoryStore: inMemory
 };

@@ -125,10 +125,25 @@ async function seedAdmin() {
 
 if (require.main === module) {
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, async () => {
+    
+    // CRITICAL: Bind immediately so Express is ALWAYS online.
+    // DB init runs async in background — a slow/failing DB must NEVER block the server from starting.
+    const server = app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
-        await initDatabase();
     });
+
+    server.on('error', (err) => {
+        console.error('💥 HTTP Server error:', err.message);
+    });
+
+    // Run DB init async after server is already listening
+    (async () => {
+        try {
+            await initDatabase();
+        } catch (err) {
+            console.error('❌ Background DB init failed (server still running):', err.message);
+        }
+    })();
 }
 
-module.exports = app;
+module.exports = app;
